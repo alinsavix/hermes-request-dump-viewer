@@ -4,3 +4,5 @@ description: "Request dump viewer plus live preflight-capture toggle."
 author: "Alinsa / GIR"
 hooks:
   - pre_api_request
+provides_hooks:
+  - pre_api_request
