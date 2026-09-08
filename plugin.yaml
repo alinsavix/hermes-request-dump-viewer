@@ -3,7 +3,7 @@ version: "0.3.0"
 manifest_version: 2
 api_version: 1
 description: "Request dump viewer plus live preflight-capture toggle."
-author: "Alinsa / GIR"
+author: "TDV Alinsa"
 license: AGPL-3.0-or-later
 homepage: https://github.com/alinsavix/hermes-request-dump-viewer
 tags:
