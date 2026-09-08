@@ -445,8 +445,8 @@
     if (!flows.length && !orphans.length) return h("div", { className: "rdv-empty" }, "No tool calls or tool results in this request.");
     return h("div", { className: "rdv-analysis rdv-flow-list" },
       flows.map(function (flow, i) {
-        return h("article", { className: "rdv-flow-card is-" + flow.status, key: flow.call_id || i },
-          h("header", null,
+        return h("details", { className: "rdv-flow-card is-" + flow.status, key: flow.call_id || i, open: true },
+          h("summary", null,
             h("span", { className: "rdv-flow-number" }, String(i + 1).padStart(2, "0")),
             h("div", null, h("strong", null, flow.name), h("code", null, flow.call_id)),
             h("span", { className: "rdv-flow-status" }, flow.status === "matched" ? "Matched" : flow.status === "multiple_results" ? "Multiple results" : "Missing result")
