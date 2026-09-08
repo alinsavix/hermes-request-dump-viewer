@@ -14,28 +14,31 @@ It adds:
 ## Requirements
 
 - Hermes Agent with the general plugin system and web-dashboard plugin system
-- Hermes providing the `pre_api_request` hook and `HERMES_DUMP_REQUESTS` request-capture path
+- A current Hermes release providing the `pre_api_request` hook and
+  `HERMES_DUMP_REQUESTS` request-capture path
 - A Hermes dashboard (`hermes dashboard`)
-- Python 3.11+ for the plugin runtime
+- Python 3.11+
 
-Use a current Hermes release. Older releases may not provide the hook or dashboard APIs used here.
+Older Hermes releases may not provide the hook or dashboard APIs used here.
 
 ## Installation
 
-From a checked-out copy, copy or symlink this repository into the user's Hermes plugin directory:
+Install the published plugin directly from GitHub:
 
 ```bash
-mkdir -p ~/.hermes/plugins
-cp -R hermes-request-dump-viewer ~/.hermes/plugins/request-dump-viewer
+hermes plugins install alinsavix/hermes-request-dump-viewer --enable
 ```
 
-For a published repository, Hermes supports installing directly from GitHub:
+For a reproducible installation, pin an exact 40-character commit SHA:
 
 ```bash
-hermes plugins install OWNER/REPOSITORY --enable
+hermes plugins install alinsavix/hermes-request-dump-viewer \
+  --ref 0123456789abcdef0123456789abcdef01234567 \
+  --enable
 ```
 
-After installation, start or restart the Hermes gateway and dashboard. If the dashboard is already running, force a plugin rescan:
+Restart the Hermes gateway and dashboard after installation. If the dashboard
+is already running, force a plugin rescan:
 
 ```bash
 curl http://127.0.0.1:9119/api/dashboard/plugins/rescan
@@ -49,9 +52,23 @@ hermes plugins
 
 ## Usage
 
-Open the **Request Dumps** tab in the Hermes web dashboard. Capture is disabled at gateway startup. Turn on **Preflight capture** only when investigating a request; it writes request dumps for subsequent requests until turned off or the gateway process ends.
+Open the **Request Dumps** tab in the Hermes web dashboard. Capture is disabled
+at gateway startup. Turn on **Preflight capture** only when investigating a
+request; it writes request dumps for subsequent requests until turned off or
+the gateway process ends.
 
-The viewer reads dumps from Hermes' sessions directory. Redacted views are the default. **Raw downloads contain the original request object and may include private prompts, authorization headers, cookies, tokens, URLs, tool arguments, or other sensitive data.** Only use raw download and deletion controls when you understand the local dashboard's access boundary.
+The viewer reads dumps from Hermes' sessions directory. Redacted views are the
+default. **Raw downloads contain the original request object and may include
+private prompts, authorization headers, cookies, tokens, URLs, tool arguments,
+or other sensitive data.** Only use raw download and deletion controls when
+you understand the local dashboard's access boundary.
+
+## Screenshots
+
+Screenshots will be added once representative request dumps are available in
+the public release environment. They should show the redacted default view,
+the tool-flow and schema tabs, and the prompt-composition view without
+exposing private prompts, credentials, tokens, or tool arguments.
 
 ## Security notes
 
@@ -62,22 +79,16 @@ The viewer reads dumps from Hermes' sessions directory. Redacted views are the d
 - Dump deletion is restricted to files matching `request_dump_*.json` in Hermes' sessions directory.
 - Do not enable preflight capture in a shared or sensitive deployment unless the resulting data is acceptable to retain locally.
 
-## Development
-
-Run the test suite from the repository root:
-
-```bash
-python -m unittest discover -s tests -p 'test_*.py' -v
-```
-
-The dashboard bundle is committed intentionally. The plugin does not require a Node.js build during installation or runtime.
-
 ## Compatibility and versioning
 
-The plugin follows semantic versioning. The plugin manifest and dashboard manifest use the same release version. When Hermes changes the dashboard SDK, API route contract, request-dump format, or `pre_api_request` hook, update the compatibility notes and tests before releasing.
+The plugin follows semantic versioning. The plugin manifest and dashboard
+manifest use the same release version. When Hermes changes the dashboard SDK,
+API route contract, request-dump format, or `pre_api_request` hook, update the
+compatibility notes and tests before releasing.
 
 ## License
 
-Copyright (C) 2026 Alinsa / GIR.
+Copyright (C) 2026 TDV Alinsa.
 
-This project is licensed under the GNU Affero General Public License, version 3 or any later version (AGPL-3.0-or-later). See [LICENSE](./LICENSE).
+This project is licensed under the GNU Affero General Public License, version 3
+or any later version (AGPL-3.0-or-later). See [LICENSE](./LICENSE).
