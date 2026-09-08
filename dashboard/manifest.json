@@ -1,0 +1,14 @@
+{
+  "name": "request-dump-viewer",
+  "label": "Request Dumps",
+  "description": "Inspect Hermes LLM request dumps with message, tool-call, schema, and incremental-diff views.",
+  "icon": "Search",
+  "version": "0.3.0",
+  "tab": {
+    "path": "/request-dumps",
+    "position": "after:sessions"
+  },
+  "entry": "dist/index.js",
+  "css": "dist/style.css",
+  "api": "plugin_api.py"
+}

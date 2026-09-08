@@ -1,0 +1,15 @@
+[project]
+name = "hermes-request-dump-viewer"
+version = "0.3.0"
+description = "Hermes Agent dashboard plugin for inspecting request dumps"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "AGPL-3.0-or-later" }
+authors = [{ name = "Alinsa / GIR" }]
+dependencies = []
+
+[tool.hatch.build.targets.wheel]
+only-include = ["plugin.yaml", "__init__.py", "dashboard", "tests", "README.md", "LICENSE"]
+
+[tool.hatch.build.targets.sdist]
+include = ["plugin.yaml", "__init__.py", "dashboard", "tests", "README.md", "LICENSE", "pyproject.toml"]
