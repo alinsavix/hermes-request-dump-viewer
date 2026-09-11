@@ -31,6 +31,10 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn('className: "rdv-tool-name"', script)
         self.assertIn(".rdv-tool-name{font:inherit;font-weight:700;background:transparent", style)
 
+    def test_collapsed_tool_results_reuse_the_matching_call_header(self):
+        source = INDEX.read_text(encoding="utf-8")
+        self.assertIn("toolHeader(message._tool_call)", source)
+
     def test_encrypted_reasoning_hides_only_an_immediately_following_empty_assistant(self):
         source = INDEX.read_text(encoding="utf-8")
         self.assertIn("function collapseReasoningFollowups(messages)", source)

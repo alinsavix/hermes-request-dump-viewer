@@ -154,7 +154,7 @@ def _normalized_messages(body: dict[str, Any]) -> list[dict[str, Any]]:
     """
     messages = body.get("messages")
     if isinstance(messages, list):
-        return [item for item in messages if isinstance(item, dict)]
+        return _link_tool_results([item for item in messages if isinstance(item, dict)])
 
     inputs = body.get("input")
     if isinstance(inputs, str):
@@ -232,7 +232,35 @@ def _normalized_messages(body: dict[str, Any]) -> list[dict[str, Any]]:
                 "role": str(item_type or "input"),
                 "content": {k: v for k, v in item.items() if k != "type"},
             })
-    return normalized
+    return _link_tool_results(normalized)
+
+
+def _link_tool_results(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Attach each result's originating call for compact UI labels."""
+    calls_by_id: dict[str, dict[str, Any]] = {}
+    for message in messages:
+        calls = message.get("tool_calls")
+        if not isinstance(calls, list):
+            continue
+        for call in calls:
+            if not isinstance(call, dict):
+                continue
+            call_id = call.get("id") or call.get("call_id")
+            if call_id is not None:
+                calls_by_id[str(call_id)] = call
+
+    linked: list[dict[str, Any]] = []
+    for message in messages:
+        item = dict(message)
+        call_id = item.get("tool_call_id")
+        matching_call = calls_by_id.get(str(call_id)) if call_id is not None else None
+        if item.get("role") == "tool" and matching_call is not None:
+            item["_tool_call"] = matching_call
+            fn = matching_call.get("function")
+            if not item.get("name") and isinstance(fn, dict) and fn.get("name"):
+                item["name"] = fn["name"]
+        linked.append(item)
+    return linked
 
 
 def _compact_text(value: Any) -> str:

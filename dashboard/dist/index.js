@@ -265,27 +265,29 @@
       const fn = (call && call.function) || call || {};
       return toolHeader(call);
     }).join(", ");
-    if (!value) value = "(empty)";
+    if (!value && !(message.role === "tool" && message._tool_call)) value = "(empty)";
     return value.length > 220 ? value.slice(0, 220).trimEnd() + "…" : value;
   }
 
   function Message(props) {
     const message = props.message || {};
     const calls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    const resultHeader = message.role === "tool" && message._tool_call ? toolHeader(message._tool_call) : "";
+    const summary = messageSummary(message, calls);
     const path = "$.request.body.messages[" + props.index + "]";
     const encrypted = message.role === "reasoning" && message.content && typeof message.content === "object" && message.content.encrypted_content;
     return h("details", { id: "message-" + (props.index + 1), className: "rdv-message " + (props.added ? "is-added" : "") + (props.removed ? " is-removed" : "") },
       h("summary", { className: "rdv-message-summary" },
         h("span", { className: "rdv-role" }, message.role === "tool" ? "tool result" : (message.role || "unknown")),
         h("span", { className: "rdv-index" }, "#" + (props.index + 1)),
-        message.name && h("strong", { className: "rdv-tool-name" }, message.name),
+        (resultHeader || message.name) && h("strong", { className: "rdv-tool-name" }, resultHeader || message.name),
         message.status && h("span", { className: "rdv-status" }, message.status),
         message.phase && h("span", { className: "rdv-status" }, message.phase),
         message._responses_kind === "instructions" && h("span", { className: "rdv-change" }, "Responses instructions"),
         props.added && h("span", { className: "rdv-change" }, "added"),
         props.removed && h("span", { className: "rdv-change" }, "removed"),
         calls.length > 0 && h("span", { className: "rdv-call-count" }, calls.length + " tool call" + (calls.length === 1 ? "" : "s")),
-        h("span", { className: "rdv-message-preview" }, messageSummary(message, calls))
+        summary && h("span", { className: "rdv-message-preview" }, summary)
       ),
       h("div", { className: "rdv-message-body" },
         h("div", { className: "rdv-item-actions" },

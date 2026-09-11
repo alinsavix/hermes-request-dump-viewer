@@ -438,6 +438,57 @@ class RequestAnalysisTests(unittest.TestCase):
         self.assertEqual(messages[1]["name"], "search_files")
         self.assertEqual(messages[1]["tool_call_id"], "call-1")
 
+    def test_tool_results_inherit_matching_call_arguments_for_collapsed_headers(self):
+        body = {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": "call-skill",
+                            "type": "function",
+                            "function": {
+                                "name": "skill_view",
+                                "arguments": '{"name":"local:github-local-patterns"}',
+                            },
+                        },
+                        {
+                            "id": "call-file",
+                            "type": "function",
+                            "function": {
+                                "name": "read_file",
+                                "arguments": '{"path":"/tmp/example.md"}',
+                            },
+                        },
+                    ],
+                },
+                {
+                    "role": "tool",
+                    "name": "skill_view",
+                    "tool_call_id": "call-skill",
+                    "content": '{"success":true}',
+                },
+                {
+                    "role": "tool",
+                    "name": "read_file",
+                    "tool_call_id": "call-file",
+                    "content": "file contents",
+                },
+            ]
+        }
+
+        messages = api._normalized_messages(body)
+
+        self.assertEqual(
+            messages[1]["_tool_call"]["function"]["arguments"],
+            '{"name":"local:github-local-patterns"}',
+        )
+        self.assertEqual(
+            messages[2]["_tool_call"]["function"]["arguments"],
+            '{"path":"/tmp/example.md"}',
+        )
+
     def test_responses_instructions_and_input_get_composition_and_prompt_map(self):
         body = {
             "model": "gpt-test",
