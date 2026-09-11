@@ -25,11 +25,12 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("Not part of the provider request", source)
         self.assertNotIn('["outcome", "Outcome"]', source)
 
-    def test_tool_result_name_uses_plain_bold_text(self):
+    def test_tool_results_use_the_same_summary_style_as_tool_calls(self):
         script = INDEX.read_text(encoding="utf-8")
         style = STYLE.read_text(encoding="utf-8")
-        self.assertIn('className: "rdv-tool-name"', script)
-        self.assertIn(".rdv-tool-name{font:inherit;font-weight:700;background:transparent", style)
+        self.assertIn("message._tool_call ? toolHeader(message._tool_call)", script)
+        self.assertNotIn("rdv-tool-name", script)
+        self.assertNotIn("rdv-tool-name", style)
 
     def test_collapsed_tool_results_reuse_the_matching_call_header(self):
         source = INDEX.read_text(encoding="utf-8")

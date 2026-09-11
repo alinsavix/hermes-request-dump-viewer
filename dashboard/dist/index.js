@@ -260,19 +260,25 @@
     if (message.role === "reasoning" && message.content && typeof message.content === "object" && message.content.encrypted_content) {
       return "Encrypted reasoning · " + bytes(String(message.content.encrypted_content).length);
     }
-    let value = message.role === "tool" ? toolResultSummary(message) : text(message.content).replace(/\s+/g, " ").trim();
+    let value;
+    if (message.role === "tool") {
+      const header = message._tool_call ? toolHeader(message._tool_call) : (message.name || "");
+      const result = toolResultSummary(message);
+      value = [header, result].filter(Boolean).join(" · ");
+    } else {
+      value = text(message.content).replace(/\s+/g, " ").trim();
+    }
     if (!value && calls.length) value = calls.map(function (call) {
       const fn = (call && call.function) || call || {};
       return toolHeader(call);
     }).join(", ");
-    if (!value && !(message.role === "tool" && message._tool_call)) value = "(empty)";
+    if (!value) value = "(empty)";
     return value.length > 220 ? value.slice(0, 220).trimEnd() + "…" : value;
   }
 
   function Message(props) {
     const message = props.message || {};
     const calls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
-    const resultHeader = message.role === "tool" && message._tool_call ? toolHeader(message._tool_call) : "";
     const summary = messageSummary(message, calls);
     const path = "$.request.body.messages[" + props.index + "]";
     const encrypted = message.role === "reasoning" && message.content && typeof message.content === "object" && message.content.encrypted_content;
@@ -280,7 +286,6 @@
       h("summary", { className: "rdv-message-summary" },
         h("span", { className: "rdv-role" }, message.role === "tool" ? "tool result" : (message.role || "unknown")),
         h("span", { className: "rdv-index" }, "#" + (props.index + 1)),
-        (resultHeader || message.name) && h("strong", { className: "rdv-tool-name" }, resultHeader || message.name),
         message.status && h("span", { className: "rdv-status" }, message.status),
         message.phase && h("span", { className: "rdv-status" }, message.phase),
         message._responses_kind === "instructions" && h("span", { className: "rdv-change" }, "Responses instructions"),
