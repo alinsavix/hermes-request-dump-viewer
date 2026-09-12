@@ -9,12 +9,22 @@ STYLE = Path(__file__).parents[1] / "dashboard" / "dist" / "style.css"
 
 
 class FrontendContractTests(unittest.TestCase):
+    def test_tool_call_only_messages_do_not_render_an_empty_content_placeholder(self):
+        source = INDEX.read_text(encoding="utf-8")
+        self.assertIn("const emptyToolCallContent = calls.length > 0", source)
+        self.assertIn("emptyToolCallContent ? null : h(Content", source)
+
     def test_analysis_tabs_and_components_are_registered(self):
         source = INDEX.read_text(encoding="utf-8")
-        for component in ("function Composition", "function PromptMap", "function ToolFlow"):
+        for component in ("function Composition", "function PromptMap"):
             self.assertIn(component, source)
-        for tab in ('["overview", "Overview"]', '["prompt", "Prompt map', '["flow", "Tool flow'):
-            self.assertIn(tab, source)
+        self.assertNotIn('"Tool flow ("', source)
+        self.assertNotIn('tab === "flow"', source)
+        self.assertIn('d.previous_sequence == null ? "the previous request" : h("button"', source)
+        self.assertIn('className: "rdv-diff-request-link"', source)
+        self.assertIn('props.onSelect(d.previous_file)', source)
+        self.assertNotIn('unchanged prefix messages compared with ", h("code"', source)
+        self.assertNotIn('h("code", null, "Compared with "', source)
 
     def test_session_outcome_is_appended_to_messages_not_a_separate_tab(self):
         source = INDEX.read_text(encoding="utf-8")
@@ -48,6 +58,8 @@ class FrontendContractTests(unittest.TestCase):
         source = STYLE.read_text(encoding="utf-8")
         for selector in (".rdv-composition-bar", ".rdv-prompt-section", ".rdv-flow-card", ".rdv-flow-connector"):
             self.assertIn(selector, source)
+        self.assertIn(".rdv-tabs button.active", source)
+        self.assertIn("font-weight:700", source)
 
     def test_overview_is_the_default_detail_view(self):
         source = INDEX.read_text(encoding="utf-8")

@@ -749,6 +749,7 @@ def get_diff(name: str):
         common += 1
     return {
         "previous_file": previous_path.name if previous_path else None,
+        "previous_sequence": current_index if current_index is not None and current_index > 0 else None,
         "common_messages": common,
         "removed_messages": _redact(previous_messages[common:]),
         "added_messages": _redact(current_messages[common:]),

@@ -282,6 +282,7 @@
     const summary = messageSummary(message, calls);
     const path = "$.request.body.messages[" + props.index + "]";
     const encrypted = message.role === "reasoning" && message.content && typeof message.content === "object" && message.content.encrypted_content;
+    const emptyToolCallContent = calls.length > 0 && (message.content == null || message.content === "" || (Array.isArray(message.content) && message.content.length === 0));
     return h("details", { id: "message-" + (props.index + 1), className: "rdv-message " + (props.added ? "is-added" : "") + (props.removed ? " is-removed" : "") },
       h("summary", { className: "rdv-message-summary" },
         h("span", { className: "rdv-role" }, message.role === "tool" ? "tool result" : (message.role || "unknown")),
@@ -304,7 +305,7 @@
           h("strong", null, "encrypted reasoning"),
           h("span", null, bytes(String(message.content.encrypted_content).length) + " opaque provider payload"),
           message.content.summary && h(DataTree, { value: message.content.summary })
-        ) : h(Content, { value: message.content }),
+        ) : emptyToolCallContent ? null : h(Content, { value: message.content }),
         calls.map(function (call, i) { return h(ToolCall, { call: call, path: path + ".tool_calls[" + i + "]", key: call.id || i }); }),
         message.tool_call_id && h("div", { className: "rdv-tool-id" }, "tool_call_id: " + message.tool_call_id)
       )
@@ -527,7 +528,7 @@
     if (!d) return h("div", { className: "rdv-empty" }, "No diff loaded.");
     if (!d.previous_file) return h("div", { className: "rdv-empty" }, "First dump in this session — nothing earlier to compare.");
     return h("div", { className: "rdv-stack" },
-      h("div", { className: "rdv-diff-meta" }, d.common_messages + " unchanged prefix messages", h("code", null, "Compared with " + d.previous_file)),
+      h("div", { className: "rdv-diff-meta" }, d.common_messages + " unchanged prefix messages compared with ", d.previous_sequence == null ? "the previous request" : h("button", { className: "rdv-diff-request-link", onClick: function () { props.onSelect(d.previous_file); } }, "request #" + d.previous_sequence)),
       d.removed_messages.length > 0 && h("section", null, h("h3", null, "Removed or changed (" + d.removed_messages.length + ")"), d.removed_messages.map(function (m, i) { return h(Message, { key: "r" + i, message: m, index: d.common_messages + i, removed: true }); })),
       d.added_messages.length > 0 && h("section", null, h("h3", null, "Added or changed (" + d.added_messages.length + ")"), d.added_messages.map(function (m, i) { return h(Message, { key: "a" + i, message: m, index: d.common_messages + i, added: true }); })),
       !d.removed_messages.length && !d.added_messages.length && h("div", { className: "rdv-empty" }, "Requests have identical messages.")
@@ -599,7 +600,6 @@
       ["overview", "Overview"],
       ["messages", "Messages (" + displayMessages.length + ")"],
       ["prompt", "Prompt map (" + ((analysis.prompt_sections || []).length) + ")"],
-      ["flow", "Tool flow (" + ((analysis.tool_interactions || []).length) + ")"],
       ["tools", "Schemas (" + detail.tools.length + ")"],
       ["meta", "Request"],
       ["diff", "Diff"]
@@ -644,7 +644,6 @@
           outcomeMatches && h(OutcomeMessage, { value: outcome })
         ) :
         tab === "prompt" ? h(PromptMap, { analysis: analysis }) :
-        tab === "flow" ? h(ToolFlow, { analysis: analysis }) :
         tab === "tools" ? (rankedTools.length ? h("div", { className: "rdv-schema-list" }, rankedTools.map(function (entry, rank) {
           const fn = entry.tool.function || entry.tool;
           return h("details", { className: "rdv-schema", key: fn.name || entry.index },
@@ -653,7 +652,7 @@
             h("div", { className: "rdv-schema-body" }, h(DataTree, { value: fn }))
           );
         })) : h("div", { className: "rdv-empty" }, "No tool schemas in this request.")) :
-        tab === "meta" ? h(Meta, { detail: detail }) : h(Diff, { value: diff, loading: diffLoading })
+        tab === "meta" ? h(Meta, { detail: detail }) : h(Diff, { value: diff, loading: diffLoading, onSelect: props.onSelect })
       )
     );
   }
