@@ -487,7 +487,9 @@ def _summary(path: Path, include_preview: bool = False) -> dict[str, Any]:
             "session_id": data.get("session_id"),
             "reason": data.get("reason"),
             "method": request.get("method") if isinstance(request, dict) else None,
-            "url": request.get("url") if isinstance(request, dict) else None,
+            # The list endpoint is fetched automatically by the dashboard;
+            # never expose credentials embedded in provider URLs here.
+            "url": _redact(request.get("url")) if isinstance(request, dict) else None,
             "model": body.get("model") if isinstance(body, dict) else None,
             "message_count": len(messages),
             "tool_schema_count": len(body.get("tools") or []) if isinstance(body, dict) else 0,
