@@ -18,30 +18,65 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
+        run: uv python install ${{ matrix.python-version }}
 
-      - name: Install test dependencies
-        run: python -m pip install --upgrade fastapi pydantic pyyaml
+      - name: Install locked dependencies
+        run: uv sync --locked --extra test --python ${{ matrix.python-version }}
+
+      - name: Check Python style
+        run: |
+          uv run --locked ruff check .
+          uv run --locked ruff format --check .
 
       - name: Validate manifests
         run: |
-          python - <<'PY'
+          uv run --locked python - <<'PY'
           import json
           from pathlib import Path
-
-          json.loads(Path("dashboard/manifest.json").read_text(encoding="utf-8"))
           import yaml
-          yaml.safe_load(Path("plugin.yaml").read_text(encoding="utf-8"))
+
+          manifest = json.loads(Path("dashboard/manifest.json").read_text(encoding="utf-8"))
+          plugin = yaml.safe_load(Path("plugin.yaml").read_text(encoding="utf-8"))
+          assert manifest["name"] == plugin["name"]
+          assert manifest["version"] == plugin["version"]
+          assert Path(manifest["entry"]).is_file()
+          if manifest.get("css"):
+              assert Path("dashboard", manifest["css"]).is_file()
           PY
 
       - name: Compile Python
-        run: python -m compileall -q __init__.py dashboard tests
+        run: uv run --locked python -m compileall -q __init__.py dashboard tests
 
-      - name: Run tests
-        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Run pytest
+        run: uv run --locked pytest -q
+
+      - name: Build and inspect package
+        run: |
+          rm -rf dist
+          uv build
+          uv run --locked python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          wheels = list(Path("dist").glob("*.whl"))
+          assert len(wheels) == 1, wheels
+          with ZipFile(wheels[0]) as archive:
+              names = set(archive.namelist())
+          required = {
+              "plugin.yaml",
+              "__init__.py",
+              "dashboard/manifest.json",
+              "dashboard/dist/index.js",
+              "dashboard/dist/style.css",
+          }
+          missing = required - names
+          assert not missing, f"wheel is missing: {sorted(missing)}"
+          PY

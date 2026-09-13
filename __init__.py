@@ -5,6 +5,7 @@ share HERMES_HOME, so the dashboard writes a tiny atomic JSON control file and
 this pre_api_request hook reflects it into the gateway environment immediately
 before conversation_loop checks HERMES_DUMP_REQUESTS for the same request.
 """
+
 from __future__ import annotations
 
 import json
@@ -22,6 +23,7 @@ _last_enabled: bool | None = None
 def _home() -> Path:
     try:
         from hermes_constants import get_hermes_home
+
         return Path(get_hermes_home())
     except Exception:
         return Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes")

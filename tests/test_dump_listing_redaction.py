@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import tempfile
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 from test_request_analysis import _write_dump, api
 

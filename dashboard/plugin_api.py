@@ -1,6 +1,8 @@
 """Read-only backend for the Hermes request-dump desktop viewer."""
+
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
@@ -17,15 +19,27 @@ from pydantic import BaseModel
 try:
     from hermes_constants import get_hermes_home
 except ImportError:  # pragma: no cover - local test fallback
+
     def get_hermes_home() -> Path:
         return Path.home() / ".hermes"
+
 
 router = APIRouter()
 _FILE_RE = re.compile(r"^request_dump_[A-Za-z0-9_.-]+\.json$")
 _SESSION_RE = re.compile(r"^[A-Za-z0-9_.-]{1,200}$")
 _SECRET_KEYS = {
-    "authorization", "proxy_authorization", "api_key", "x_api_key", "cookie", "set_cookie",
-    "access_token", "client_secret", "password", "token", "x_auth_token", "refresh_token",
+    "authorization",
+    "proxy_authorization",
+    "api_key",
+    "x_api_key",
+    "cookie",
+    "set_cookie",
+    "access_token",
+    "client_secret",
+    "password",
+    "token",
+    "x_auth_token",
+    "refresh_token",
 }
 _REDACTED = "••••••••"
 _MAX_FILE_BYTES = 32 * 1024 * 1024
@@ -75,10 +89,8 @@ def _write_capture_state(enabled: bool) -> None:
         os.replace(tmp_name, path)
     except OSError as exc:
         if tmp_name:
-            try:
+            with contextlib.suppress(OSError):
                 Path(tmp_name).unlink(missing_ok=True)
-            except OSError:
-                pass
         raise HTTPException(status_code=500, detail=f"Could not save capture state: {exc}") from exc
 
 
@@ -128,10 +140,7 @@ def _redact(value: Any, key: str = "") -> Any:
         parts = urlsplit(value)
         query = parse_qsl(parts.query, keep_blank_values=True)
         if any(name.casefold().replace("-", "_") in _SECRET_KEYS for name, _ in query):
-            safe_query = [
-                (name, _REDACTED if name.casefold().replace("-", "_") in _SECRET_KEYS else item)
-                for name, item in query
-            ]
+            safe_query = [(name, _REDACTED if name.casefold().replace("-", "_") in _SECRET_KEYS else item) for name, item in query]
             return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(safe_query), parts.fragment))
     return value
 
@@ -162,11 +171,13 @@ def _normalized_messages(body: dict[str, Any]) -> list[dict[str, Any]]:
     normalized: list[dict[str, Any]] = []
     instructions = body.get("instructions")
     if instructions is not None:
-        normalized.append({
-            "role": "system",
-            "content": instructions,
-            "_responses_kind": "instructions",
-        })
+        normalized.append(
+            {
+                "role": "system",
+                "content": instructions,
+                "_responses_kind": "instructions",
+            }
+        )
 
     if not isinstance(inputs, list):
         return normalized
@@ -188,50 +199,62 @@ def _normalized_messages(body: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         item_type = item.get("type")
         if item_type == "function_call":
-            normalized.append({
-                "role": "assistant",
-                "content": "",
-                "tool_calls": [{
-                    "id": item.get("call_id"),
-                    "type": "function",
-                    "function": {
-                        "name": item.get("name"),
-                        "arguments": item.get("arguments", "{}"),
-                    },
-                }],
-            })
+            normalized.append(
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": item.get("call_id"),
+                            "type": "function",
+                            "function": {
+                                "name": item.get("name"),
+                                "arguments": item.get("arguments", "{}"),
+                            },
+                        }
+                    ],
+                }
+            )
         elif item_type == "function_call_output":
             call_id = item.get("call_id")
-            normalized.append({
-                "role": "tool",
-                "name": call_names.get(str(call_id)) if call_id is not None else None,
-                "content": item.get("output", ""),
-                "tool_call_id": call_id,
-            })
+            normalized.append(
+                {
+                    "role": "tool",
+                    "name": call_names.get(str(call_id)) if call_id is not None else None,
+                    "content": item.get("output", ""),
+                    "tool_call_id": call_id,
+                }
+            )
         elif item_type == "reasoning":
             # Keep the provider's reasoning record visible, but label it
             # explicitly.  encrypted_content is intentionally not decoded.
-            normalized.append({
-                "role": "reasoning",
-                "content": {
-                    "summary": item.get("summary", []),
-                    "encrypted_content": item.get("encrypted_content"),
-                },
-            })
+            normalized.append(
+                {
+                    "role": "reasoning",
+                    "content": {
+                        "summary": item.get("summary", []),
+                        "encrypted_content": item.get("encrypted_content"),
+                    },
+                }
+            )
         elif item_type == "message":
-            normalized.append({
-                "role": item.get("role", "assistant"),
-                "content": item.get("content", ""),
-                **({"status": item["status"]} if "status" in item else {}),
-                **({"phase": item["phase"]} if "phase" in item else {}),
-            })
+            normalized.append(
+                {
+                    "role": item.get("role", "assistant"),
+                    "content": item.get("content", ""),
+                    **({"status": item["status"]} if "status" in item else {}),
+                    **({"phase": item["phase"]} if "phase" in item else {}),
+                }
+            )
         elif "role" in item:
             normalized.append(item)
         else:
-            normalized.append({
-                "role": str(item_type or "input"),
-                "content": {k: v for k, v in item.items() if k != "type"},
-            })
+            normalized.append(
+                {
+                    "role": str(item_type or "input"),
+                    "content": {k: v for k, v in item.items() if k != "type"},
+                }
+            )
     return _link_tool_results(normalized)
 
 
@@ -298,11 +321,20 @@ def _prompt_category(title: str) -> str:
         return "Skills"
     if any(token in value for token in ("soul", "who you are", "identity", "voice style")):
         return "Identity & voice"
-    if any(token in value for token in (
-        "finishing the job", "parallel tool", "tool-use enforcement",
-        "execution discipline", "skill safety", "verification",
-        "prerequisite", "missing context", "missing_context",
-    )):
+    if any(
+        token in value
+        for token in (
+            "finishing the job",
+            "parallel tool",
+            "tool-use enforcement",
+            "execution discipline",
+            "skill safety",
+            "verification",
+            "prerequisite",
+            "missing context",
+            "missing_context",
+        )
+    ):
         return "Operating rules"
     if "tool" in value:
         return "Tool instructions"
@@ -322,15 +354,17 @@ def _prompt_sections(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         content = "\n".join(lines).strip()
         if not content:
             return
-        sections.append({
-            "id": f"prompt-{message_index}-{len(sections)}",
-            "title": title,
-            "category": _prompt_category(title),
-            "content": content,
-            "characters": len(content),
-            "estimated_tokens": _estimated_tokens(len(content)),
-            "message_index": message_index,
-        })
+        sections.append(
+            {
+                "id": f"prompt-{message_index}-{len(sections)}",
+                "title": title,
+                "category": _prompt_category(title),
+                "content": content,
+                "characters": len(content),
+                "estimated_tokens": _estimated_tokens(len(content)),
+                "message_index": message_index,
+            }
+        )
 
     for message_index, message in enumerate(messages):
         if message.get("role") != "system":
@@ -393,18 +427,17 @@ def _tool_flow(messages: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], li
                 known_ids.add(call_id)
             results = results_by_id.get(call_id, []) if raw_id is not None else []
             status = "matched" if len(results) == 1 else "multiple_results" if len(results) > 1 else "missing_result"
-            interactions.append({
-                "call_id": call_id,
-                "name": fn.get("name") or call.get("name") or "tool call",
-                "call_message_index": message_index,
-                "call_index": call_index,
-                "arguments": _parsed_arguments(fn.get("arguments", call.get("arguments"))),
-                "results": [
-                    {key: result[key] for key in ("message_index", "name", "content")}
-                    for result in results
-                ],
-                "status": status,
-            })
+            interactions.append(
+                {
+                    "call_id": call_id,
+                    "name": fn.get("name") or call.get("name") or "tool call",
+                    "call_message_index": message_index,
+                    "call_index": call_index,
+                    "arguments": _parsed_arguments(fn.get("arguments", call.get("arguments"))),
+                    "results": [{key: result[key] for key in ("message_index", "name", "content")} for result in results],
+                    "status": status,
+                }
+            )
 
     orphaned = [result for result in all_results if str(result.get("call_id")) not in known_ids]
     return interactions, orphaned
@@ -418,14 +451,26 @@ def _analyze_request(body: dict[str, Any], messages: list[dict[str, Any]]) -> di
     excluded = set(system_indices + current_user_indices)
     history_indices = [i for i in range(len(messages)) if i not in excluded]
 
-    option_body = {
-        key: value for key, value in body.items()
-        if key not in {"messages", "input", "instructions", "tools"}
-    }
+    option_body = {key: value for key, value in body.items() if key not in {"messages", "input", "instructions", "tools"}}
     part_specs = [
-        ("instructions", "Instructions / system", system_indices, sum(_message_characters(messages[i]) for i in system_indices)),
-        ("history", "Conversation history", history_indices, sum(_message_characters(messages[i]) for i in history_indices)),
-        ("current_user", "Current user input", current_user_indices, sum(_message_characters(messages[i]) for i in current_user_indices)),
+        (
+            "instructions",
+            "Instructions / system",
+            system_indices,
+            sum(_message_characters(messages[i]) for i in system_indices),
+        ),
+        (
+            "history",
+            "Conversation history",
+            history_indices,
+            sum(_message_characters(messages[i]) for i in history_indices),
+        ),
+        (
+            "current_user",
+            "Current user input",
+            current_user_indices,
+            sum(_message_characters(messages[i]) for i in current_user_indices),
+        ),
         ("tools", "Tool schemas", [], len(_compact_text(body.get("tools") or []))),
         ("options", "Request options", [], len(_compact_text(option_body))),
     ]
@@ -482,24 +527,29 @@ def _summary(path: Path, include_preview: bool = False) -> dict[str, Any]:
         messages = _normalized_messages(body) if isinstance(body, dict) else []
         instructions = body.get("instructions") if isinstance(body, dict) else None
         inputs = body.get("input") if isinstance(body, dict) else None
-        out.update({
-            "timestamp": data.get("timestamp"),
-            "session_id": data.get("session_id"),
-            "reason": data.get("reason"),
-            "method": request.get("method") if isinstance(request, dict) else None,
-            # The list endpoint is fetched automatically by the dashboard;
-            # never expose credentials embedded in provider URLs here.
-            "url": _redact(request.get("url")) if isinstance(request, dict) else None,
-            "model": body.get("model") if isinstance(body, dict) else None,
-            "message_count": len(messages),
-            "tool_schema_count": len(body.get("tools") or []) if isinstance(body, dict) else 0,
-            "tool_names": _tool_names(messages),
-            "input_format": "responses" if "input" in body else "chat_completions" if "messages" in body else "unknown",
-            "instruction_length": len(instructions) if isinstance(instructions, str) else 0,
-            "input_item_count": len(inputs) if isinstance(inputs, list) else (1 if isinstance(inputs, str) else 0),
-        })
+        out.update(
+            {
+                "timestamp": data.get("timestamp"),
+                "session_id": data.get("session_id"),
+                "reason": data.get("reason"),
+                "method": request.get("method") if isinstance(request, dict) else None,
+                # The list endpoint is fetched automatically by the dashboard;
+                # never expose credentials embedded in provider URLs here.
+                "url": _redact(request.get("url")) if isinstance(request, dict) else None,
+                "model": body.get("model") if isinstance(body, dict) else None,
+                "message_count": len(messages),
+                "tool_schema_count": len(body.get("tools") or []) if isinstance(body, dict) else 0,
+                "tool_names": _tool_names(messages),
+                "input_format": "responses" if "input" in body else "chat_completions" if "messages" in body else "unknown",
+                "instruction_length": len(instructions) if isinstance(instructions, str) else 0,
+                "input_item_count": len(inputs) if isinstance(inputs, list) else (1 if isinstance(inputs, str) else 0),
+            }
+        )
         if include_preview:
-            user = next((m for m in reversed(messages) if isinstance(m, dict) and m.get("role") == "user"), None)
+            user = next(
+                (m for m in reversed(messages) if isinstance(m, dict) and m.get("role") == "user"),
+                None,
+            )
             out["preview"] = _content_text(user.get("content"))[:240] if user else ""
     except Exception as exc:
         out["parse_error"] = str(exc)
@@ -521,10 +571,7 @@ def list_dumps(limit: int = Query(200, ge=1, le=1000)):
     if not root.exists():
         return {"items": [], "count": 0, "total_bytes": 0, "dump_count": 0}
     paths = sorted(
-        (
-            p for p in root.glob("request_dump_*.json")
-            if not p.is_symlink() and p.is_file() and p.stat().st_size <= _MAX_FILE_BYTES
-        ),
+        (p for p in root.glob("request_dump_*.json") if not p.is_symlink() and p.is_file() and p.stat().st_size <= _MAX_FILE_BYTES),
         key=lambda p: p.stat().st_mtime,
         reverse=True,
     )
@@ -568,13 +615,18 @@ def get_session_timeline(session_id: str):
     if not _SESSION_RE.fullmatch(session_id):
         raise HTTPException(status_code=400, detail="Invalid session id")
     root = _root()
-    candidates = sorted(
-        (
-            path for path in root.glob("request_dump_*.json")
-            if path.is_file() and not path.is_symlink() and _FILE_RE.fullmatch(path.name)
-        ),
-        key=lambda path: path.stat().st_mtime,
-    ) if root.exists() else []
+    candidates = (
+        sorted(
+            (
+                path
+                for path in root.glob("request_dump_*.json")
+                if path.is_file() and not path.is_symlink() and _FILE_RE.fullmatch(path.name)
+            ),
+            key=lambda path: path.stat().st_mtime,
+        )
+        if root.exists()
+        else []
+    )
 
     timeline: list[dict[str, Any]] = []
     for path in candidates:
@@ -589,17 +641,19 @@ def get_session_timeline(session_id: str):
         messages = _normalized_messages(body) if body is not None else []
         composition = _analyze_request(body, messages)["composition"] if body is not None else None
         timestamp = data.get("timestamp")
-        timeline.append({
-            "_sort_key": _dump_sort_key(data, path),
-            "file": path.name,
-            "timestamp": timestamp,
-            "model": body.get("model") if body is not None else None,
-            "reason": data.get("reason"),
-            "message_count": len(messages),
-            "size": path.stat().st_size,
-            "characters": composition["total_characters"] if composition is not None else None,
-            "estimated_tokens": composition["estimated_tokens"] if composition is not None else None,
-        })
+        timeline.append(
+            {
+                "_sort_key": _dump_sort_key(data, path),
+                "file": path.name,
+                "timestamp": timestamp,
+                "model": body.get("model") if body is not None else None,
+                "reason": data.get("reason"),
+                "message_count": len(messages),
+                "size": path.stat().st_size,
+                "characters": composition["total_characters"] if composition is not None else None,
+                "estimated_tokens": composition["estimated_tokens"] if composition is not None else None,
+            }
+        )
 
     timeline.sort(key=lambda item: item["_sort_key"])
     for index, item in enumerate(timeline):
@@ -610,8 +664,7 @@ def get_session_timeline(session_id: str):
         current_tokens = item["estimated_tokens"]
         previous_tokens = previous["estimated_tokens"] if previous is not None else None
         item["token_delta"] = (
-            current_tokens - previous_tokens
-            if current_tokens is not None and previous_tokens is not None else None
+            current_tokens - previous_tokens if current_tokens is not None and previous_tokens is not None else None
         )
         item["previous_file"] = previous["file"] if previous is not None else None
         item["next_file"] = timeline[index + 1]["file"] if index + 1 < len(timeline) else None
@@ -629,9 +682,7 @@ def get_session_outcome(session_id: str):
     try:
         connection = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)
         connection.row_factory = sqlite3.Row
-        session = connection.execute(
-            "SELECT source, ended_at FROM sessions WHERE id = ?", (session_id,)
-        ).fetchone()
+        session = connection.execute("SELECT source, ended_at FROM sessions WHERE id = ?", (session_id,)).fetchone()
         message = connection.execute(
             "SELECT id, content, timestamp FROM messages "
             "WHERE session_id = ? AND role = 'assistant' AND active = 1 "
@@ -737,15 +788,15 @@ def get_diff(name: str):
         None,
     )
     previous_path = session_dumps[current_index - 1][1] if current_index is not None and current_index > 0 else None
-    current_body = ((current.get("request") or {}).get("body") or {})
+    current_body = (current.get("request") or {}).get("body") or {}
     current_messages = _normalized_messages(current_body)
     previous_messages: list[Any] = []
     if previous_path:
         previous = _load(previous_path.name)
-        previous_body = ((previous.get("request") or {}).get("body") or {})
+        previous_body = (previous.get("request") or {}).get("body") or {}
         previous_messages = _normalized_messages(previous_body)
     common = 0
-    for before, after in zip(previous_messages, current_messages):
+    for before, after in zip(previous_messages, current_messages, strict=False):
         if before != after:
             break
         common += 1
