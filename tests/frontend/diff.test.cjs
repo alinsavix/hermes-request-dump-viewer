@@ -302,7 +302,7 @@ test("an old backend payload shows a version warning instead of blanking the das
   assert.ok(document.querySelector(".rdv-page"));
 });
 
-test("a moved modified tool has one destination, a source link, and inspectable before/after contents", async (t) => {
+test("F17 a moved tool source transfers keyboard focus to the opened destination summary", async (t) => {
   const call = (args) => ({
     role: "assistant",
     tool_calls: [
@@ -337,14 +337,29 @@ test("a moved modified tool has one destination, a source link, and inspectable 
   assert.equal(document.querySelectorAll('[data-diff-id="changed"]').length, 1);
   assert.match(document.body.textContent, /skill_view/);
   await React.act(async () => {
+    link.focus();
+    // jsdom does not synthesize native activation from Enter. Dispatch the
+    // keyboard activation click (detail=0) that the browser would generate.
     link.dispatchEvent(
-      new dom.window.MouseEvent("click", { bubbles: true, cancelable: true }),
+      new dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    link.dispatchEvent(
+      new dom.window.MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        detail: 0,
+      }),
     );
     document
       .getElementById("diff-changed")
       .dispatchEvent(new dom.window.Event("toggle"));
   });
   assert.equal(document.getElementById("diff-changed").open, true);
+  assert.ok(
+    document.activeElement ===
+      document.querySelector("#diff-changed > summary"),
+    "keyboard focus follows the move to its destination summary",
+  );
   assert.match(
     document.querySelector(".rdv-diff-pair").textContent,
     /before-skill.*after-skill/s,

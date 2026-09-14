@@ -101,10 +101,9 @@ def test_sidebar_supports_collapse_resize_and_mobile_drawer():
     assert ".rdv-mobile-backdrop" in style
 
 
-def test_diff_effect_does_not_depend_on_loading_state():
-    source = _compact(INDEX.read_text(encoding="utf-8"))
-    assert "[props.name, tab, diff, diffLoading]" not in source
-    assert "[props.name, tab, diff]" in source
+# Diff cancellation, retry, and stale-response behavior is exercised through
+# the registered React App in tests/frontend/recovery.test.cjs. Do not pin an
+# effect's dependency array: doing so preserved the original loading deadlock.
 
 
 def test_message_summary_collapses_actual_whitespace():

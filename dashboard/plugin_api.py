@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import contextlib
 import json
+import math
 import os
 import re
 import sqlite3
+import stat
 import tempfile
 from bisect import bisect_left
 from datetime import datetime
@@ -15,7 +17,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 try:
     from hermes_constants import get_hermes_home
@@ -48,7 +50,7 @@ _STATE_FILE = "request-dump-viewer-state.json"
 
 
 class CaptureState(BaseModel):
-    enabled: bool
+    enabled: bool = Field(strict=True)
 
 
 def _root() -> Path:
@@ -59,34 +61,46 @@ def _state_path() -> Path:
     return Path(get_hermes_home()) / "state" / _STATE_FILE
 
 
-def _startup_enabled() -> bool:
-    value = os.environ.get("HERMES_DUMP_REQUESTS", "")
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+def _check_state_path(path: Path) -> None:
+    """Reject links/special files in the control path under the trusted home."""
+    for target, expected in ((path.parent, stat.S_ISDIR), (path, stat.S_ISREG)):
+        try:
+            mode = target.lstat().st_mode
+        except FileNotFoundError:
+            continue
+        if not expected(mode):
+            raise OSError("Unsafe capture state path type")
 
 
 def _read_capture_state() -> tuple[bool, str]:
     try:
-        data = json.loads(_state_path().read_text(encoding="utf-8"))
+        path = _state_path()
+        _check_state_path(path)
+        data = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(data, dict) and isinstance(data.get("enabled"), bool):
-            return data["enabled"], "live"
+            return data["enabled"], "control_file"
+        return False, "invalid"
     except FileNotFoundError:
-        pass
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Could not read capture state: {exc}") from exc
-    return _startup_enabled(), "startup_env"
+        return False, "missing"
+    except (ValueError, UnicodeError):
+        return False, "invalid"
+    except OSError:
+        return False, "unavailable"
 
 
 def _write_capture_state(enabled: bool) -> None:
     path = _state_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps({"enabled": enabled}, indent=2) + "\n"
     tmp_name: str | None = None
     try:
+        _check_state_path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as tmp:
+            tmp_name = tmp.name
             tmp.write(payload)
             tmp.flush()
             os.fsync(tmp.fileno())
-            tmp_name = tmp.name
+        _check_state_path(path)
         os.replace(tmp_name, path)
     except OSError as exc:
         if tmp_name:
@@ -98,13 +112,15 @@ def _write_capture_state(enabled: bool) -> None:
 @router.get("/capture")
 def get_capture_state():
     enabled, source = _read_capture_state()
-    return {"enabled": enabled, "source": source}
+    # This is requested state, not acknowledgement from any gateway process.
+    # In particular this process cannot inspect the gateway startup environment.
+    return {"enabled": enabled, "source": source, "effective_enabled": None}
 
 
 @router.put("/capture")
 def set_capture_state(state: CaptureState):
     _write_capture_state(state.enabled)
-    return {"enabled": state.enabled, "source": "live"}
+    return get_capture_state()
 
 
 def _dump_path(name: str) -> Path:
@@ -118,15 +134,27 @@ def _dump_path(name: str) -> Path:
     return path
 
 
+def _finite_float(text: str) -> float:
+    value = float(text)
+    if not math.isfinite(value):
+        raise ValueError("Nonfinite JSON number")
+    return value
+
+
+def _strict_json_loads(text: str) -> Any:
+    # parse_float also rejects exponent overflow; parse_constant alone does not.
+    return json.loads(text, parse_float=_finite_float, parse_constant=_finite_float)
+
+
 def _load(name: str) -> dict[str, Any]:
     try:
-        value = json.loads(_dump_path(name).read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=422, detail=f"Invalid JSON: {exc}") from exc
+        value = _strict_json_loads(_dump_path(name).read_text(encoding="utf-8"))
+    except (ValueError, UnicodeError) as exc:
+        raise HTTPException(status_code=422, detail=f"{name}: invalid UTF-8 JSON") from exc
     except OSError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     if not isinstance(value, dict):
-        raise HTTPException(status_code=422, detail="Request dump root must be an object")
+        raise HTTPException(status_code=422, detail=f"{name}: request dump root must be an object")
     return value
 
 
@@ -148,12 +176,31 @@ def _redact(value: Any, key: str = "") -> Any:
             safe = _redact(parsed)
             if safe != parsed:
                 return json.dumps(safe, ensure_ascii=False)
-    if isinstance(value, str) and "?" in value:
+    if isinstance(value, str):
+        if value.startswith(("/", "?")) and not any(character.isspace() for character in value):
+            return _redact_url(value)
+        return _URL_RE.sub(lambda match: _redact_url(match.group()), value)
+    return value
+
+
+# Parse URL tokens, never whole arbitrary prompts. Preserve surrounding prose.
+_URL_RE = re.compile(r"(?:\b[a-z][a-z0-9+.-]*://|(?<!\S)//)[^\s<>\"']+", re.IGNORECASE)
+
+
+def _redact_url(value: str) -> str:
+    try:
         parts = urlsplit(value)
         query = parse_qsl(parts.query, keep_blank_values=True)
-        if any(name.casefold().replace("-", "_") in _SECRET_KEYS for name, _ in query):
-            safe_query = [(name, _REDACTED if name.casefold().replace("-", "_") in _SECRET_KEYS else item) for name, item in query]
-            return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(safe_query), parts.fragment))
+        safe_query = [
+            (name, _REDACTED if name.casefold().replace("-", "_") in _SECRET_KEYS | {"key"} else item) for name, item in query
+        ]
+        netloc = _REDACTED + "@" + parts.netloc.rsplit("@", 1)[1] if "@" in parts.netloc else parts.netloc
+        if safe_query != query or netloc != parts.netloc:
+            return urlunsplit((parts.scheme, netloc, parts.path, urlencode(safe_query), parts.fragment))
+    except ValueError:
+        # Unparseable authorities may contain credentials: clear only this
+        # unsafe URL token, not the diagnostic text around it.
+        return _REDACTED
     return value
 
 
@@ -173,6 +220,10 @@ def _normalized_messages(body: dict[str, Any]) -> list[dict[str, Any]]:
     instructions into a synthetic system message so the existing message
     viewer can display it without changing the Chat Completions path.
     """
+    # Non-object request/body values have no message fields. Normal views
+    # consistently treat them as empty; raw access retains the original shape.
+    if not isinstance(body, dict):
+        return []
     messages = body.get("messages")
     if isinstance(messages, list):
         return _link_tool_results([item for item in messages if isinstance(item, dict)])
@@ -401,8 +452,10 @@ def _parsed_arguments(value: Any) -> Any:
     if not isinstance(value, str):
         return value
     try:
-        return json.loads(value)
-    except (json.JSONDecodeError, TypeError):
+        return _strict_json_loads(value)
+    except (ValueError, TypeError):
+        # Invalid/nonfinite embedded JSON is diagnostic text, not a parsed
+        # object. Preserve it rather than emitting non-JSON response numbers.
         return value
 
 
@@ -533,9 +586,9 @@ def _summary(path: Path, include_preview: bool = False) -> dict[str, Any]:
         "modified": datetime.fromtimestamp(stat.st_mtime).astimezone().isoformat(),
     }
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        request = data.get("request") if isinstance(data, dict) else {}
-        body = request.get("body") if isinstance(request, dict) else {}
+        data = _load(path.name)
+        request = data.get("request") if isinstance(data.get("request"), dict) else {}
+        body = request.get("body") if isinstance(request.get("body"), dict) else {}
         messages = _normalized_messages(body) if isinstance(body, dict) else []
         instructions = body.get("instructions") if isinstance(body, dict) else None
         inputs = body.get("input") if isinstance(body, dict) else None
@@ -562,10 +615,10 @@ def _summary(path: Path, include_preview: bool = False) -> dict[str, Any]:
                 (m for m in reversed(messages) if isinstance(m, dict) and m.get("role") == "user"),
                 None,
             )
-            out["preview"] = _content_text(user.get("content"))[:240] if user else ""
+            out["preview"] = _content_text(_redact(user.get("content")))[:240] if user else ""
     except Exception as exc:
         out["parse_error"] = str(exc)
-    return out
+    return _redact(out)
 
 
 def _dump_sort_key(data: dict[str, Any], path: Path) -> tuple[float, str]:
@@ -680,7 +733,7 @@ def get_session_timeline(session_id: str):
         )
         item["previous_file"] = previous["file"] if previous is not None else None
         item["next_file"] = timeline[index + 1]["file"] if index + 1 < len(timeline) else None
-    return {"session_id": session_id, "items": timeline, "count": len(timeline)}
+    return _redact({"session_id": session_id, "items": timeline, "count": len(timeline)})
 
 
 @router.get("/sessions/{session_id}/outcome")
@@ -705,22 +758,26 @@ def get_session_outcome(session_id: str):
     except sqlite3.Error:
         return {"session_id": session_id, "found": False, "reason": "Session database unreadable"}
     if message is None:
-        return {
+        return _redact(
+            {
+                "session_id": session_id,
+                "found": False,
+                "reason": "No stored assistant response",
+                "source": session["source"] if session else None,
+                "ended": bool(session and session["ended_at"] is not None),
+            }
+        )
+    return _redact(
+        {
             "session_id": session_id,
-            "found": False,
-            "reason": "No stored assistant response",
+            "found": True,
+            "content": message["content"],
+            "message_id": message["id"],
+            "timestamp": message["timestamp"],
             "source": session["source"] if session else None,
             "ended": bool(session and session["ended_at"] is not None),
         }
-    return {
-        "session_id": session_id,
-        "found": True,
-        "content": message["content"],
-        "message_id": message["id"],
-        "timestamp": message["timestamp"],
-        "source": session["source"] if session else None,
-        "ended": bool(session and session["ended_at"] is not None),
-    }
+    )
 
 
 @router.delete("/dumps")
@@ -766,7 +823,7 @@ def get_dump(name: str):
     return {
         "meta": _redact(_summary(_dump_path(name), include_preview=False)),
         "request": {
-            "method": request.get("method"),
+            "method": _redact(request.get("method")),
             "url": _redact(request.get("url")),
             "headers": _redact(request.get("headers") or {}),
             "body_options": _redact({k: v for k, v in body.items() if k not in {"messages", "input", "instructions", "tools"}}),
@@ -1218,12 +1275,14 @@ def get_diff(name: str):
         None,
     )
     previous_path = session_dumps[current_index - 1][1] if current_index is not None and current_index > 0 else None
-    current_body = (current.get("request") or {}).get("body") or {}
+    current_request = current.get("request")
+    current_body = current_request.get("body") if isinstance(current_request, dict) else {}
     current_messages = _normalized_messages(current_body)
     previous_messages: list[Any] = []
     if previous_path:
         previous = _load(previous_path.name)
-        previous_body = (previous.get("request") or {}).get("body") or {}
+        previous_request = previous.get("request")
+        previous_body = previous_request.get("body") if isinstance(previous_request, dict) else {}
         previous_messages = _normalized_messages(previous_body)
     # Match raw payloads first: credential-only changes must not disappear.
     # Redact the entire response, including every compatibility view and row.

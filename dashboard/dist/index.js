@@ -83,14 +83,8 @@
     try {
       return JSON.parse(value);
     } catch (_) {
-      // Some tool adapters wrap JSON in an untrusted-result envelope.
-      const start = value.indexOf("{");
-      const end = value.lastIndexOf("}");
-      if (start >= 0 && end > start) {
-        try {
-          return JSON.parse(value.slice(start, end + 1));
-        } catch (_) {}
-      }
+      // Only complete JSON is structured; prefixes and suffixes may contain
+      // diagnostic errors or exit status and must never be discarded.
       return value;
     }
   }
@@ -176,6 +170,38 @@
     );
   }
 
+  // Isolate unexpected tab/detail failures without losing outer navigation.
+  // Never echo payloads in the fallback.
+  class RenderBoundary extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = { failed: false };
+    }
+    static getDerivedStateFromError() {
+      return { failed: true };
+    }
+    componentDidUpdate(previous) {
+      if (previous.resetKey !== this.props.resetKey && this.state.failed)
+        this.setState({ failed: false });
+    }
+    render() {
+      if (!this.state.failed) return this.props.children;
+      return h(
+        "div",
+        { className: "rdv-empty rdv-error", role: "alert" },
+        this.props.scope +
+          " could not be displayed. Try another view or Refresh.",
+        h(
+          "button",
+          {
+            onClick: () => this.setState({ failed: false }),
+          },
+          "Retry view",
+        ),
+      );
+    }
+  }
+
   function JsonBlock(props) {
     return h(
       "pre",
@@ -238,10 +264,15 @@
         "div",
         { className: "rdv-array" },
         value.map(function (item, i) {
-          const title =
+          const label =
             item && typeof item === "object"
-              ? item.name || item.type || item.role || "Item " + (i + 1)
-              : "Item " + (i + 1);
+              ? [item.name, item.type, item.role].find(function (candidate) {
+                  return (
+                    candidate != null && isScalar(candidate) && candidate !== ""
+                  );
+                })
+              : null;
+          const title = label == null ? "Item " + (i + 1) : String(label);
           return h(
             TreeDetails,
             { className: "rdv-node", open: value.length <= 3, key: i },
@@ -467,6 +498,16 @@
   function ToolCall(props) {
     const call = props.call || {};
     const fn = call.function || {};
+    const argumentPath =
+      fn.arguments != null
+        ? ".function.arguments"
+        : Object.prototype.hasOwnProperty.call(call, "arguments")
+          ? ".arguments"
+          : Object.prototype.hasOwnProperty.call(fn, "arguments")
+            ? ".function.arguments"
+            : null;
+    const argumentsValue =
+      argumentPath === ".function.arguments" ? fn.arguments : call.arguments;
     return h(
       "details",
       { className: "rdv-tool" },
@@ -477,10 +518,9 @@
         h(
           "button",
           {
+            disabled: argumentPath == null,
             onClick: function () {
-              copyText(
-                parsed(fn.arguments == null ? call.arguments : fn.arguments),
-              );
+              copyText(parsed(argumentsValue));
             },
           },
           "Copy arguments",
@@ -488,8 +528,9 @@
         h(
           "button",
           {
+            disabled: argumentPath == null,
             onClick: function () {
-              copyText(props.path || "$");
+              copyText(props.path + argumentPath);
             },
           },
           "Copy JSONPath",
@@ -499,7 +540,7 @@
         "div",
         { className: "rdv-tool-data" },
         h(DataTree, {
-          value: parsed(fn.arguments == null ? call.arguments : fn.arguments),
+          value: parsed(argumentsValue),
         }),
       ),
     );
@@ -542,7 +583,7 @@
     const message = props.message || {};
     const calls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
     const summary = messageSummary(message, calls);
-    const path = "$.request.body.messages[" + props.index + "]";
+    const path = "$.messages[" + props.index + "]";
     const encrypted =
       message.role === "reasoning" &&
       message.content &&
@@ -1219,9 +1260,13 @@
       function () {
         if (!props.sessionId) return;
         let live = true;
+        setError(null);
         api("/sessions/" + encodeURIComponent(props.sessionId) + "/timeline")
           .then(function (value) {
-            if (live) setTimeline(value);
+            if (live) {
+              setTimeline(value);
+              setError(null);
+            }
           })
           .catch(function (err) {
             if (live) setError(err);
@@ -1464,6 +1509,13 @@
 
   function Diff(props) {
     const d = props.value;
+    if (props.error)
+      return h(
+        "div",
+        { className: "rdv-empty rdv-error", role: "alert" },
+        "Could not load diff: " + (props.error.message || String(props.error)),
+        h("button", { onClick: props.onRetry }, "Retry diff"),
+      );
     if (props.loading)
       return h("div", { className: "rdv-empty" }, "Loading diff…");
     if (!d) return h("div", { className: "rdv-empty" }, "No diff loaded.");
@@ -1531,6 +1583,8 @@
                     );
                     if (target) {
                       target.open = true;
+                      const summary = target.querySelector("summary");
+                      if (summary) summary.focus({ preventScroll: true });
                       target.scrollIntoView({ block: "center" });
                     }
                   },
@@ -1602,6 +1656,10 @@
     const diffLoadState = useState(false),
       diffLoading = diffLoadState[0],
       setDiffLoading = diffLoadState[1];
+    const diffErrorState = useState(null),
+      diffError = diffErrorState[0],
+      setDiffError = diffErrorState[1];
+    const diffRetryState = useState(0);
 
     function selectTab(value) {
       setTab(value);
@@ -1628,16 +1686,18 @@
     useEffect(
       function () {
         let live = true;
-        setDetail(null);
-        setOutcome(null);
+        // Detail is keyed by filename. A same-request refresh keeps its
+        // healthy data and mounted controls until the replacement arrives.
         setError(null);
-        setDiff(null);
-        diffExpansion[1](null);
         updateURL({ dump: props.name });
         api("/dumps/" + encodeURIComponent(props.name))
           .then(function (v) {
             if (!live) return;
             setDetail(v);
+            props.onDetailLoaded({
+              file: props.name,
+              sessionId: v.meta.session_id,
+            });
             return api(
               "/sessions/" + encodeURIComponent(v.meta.session_id) + "/outcome",
             )
@@ -1656,20 +1716,25 @@
           live = false;
         };
       },
-      [props.name],
+      [props.name, props.refreshKey, props.onDetailLoaded],
     );
 
     useEffect(
       function () {
-        if (tab !== "diff" || diff || diffLoading) return;
+        if (tab !== "diff") {
+          setDiffLoading(false);
+          return;
+        }
         let live = true;
+        setDiff(null);
+        setDiffError(null);
         setDiffLoading(true);
         api("/dumps/" + encodeURIComponent(props.name) + "/diff")
           .then(function (v) {
             if (live) setDiff(v);
           })
           .catch(function (e) {
-            if (live) setError(e);
+            if (live) setDiffError(e);
           })
           .finally(function () {
             if (live) setDiffLoading(false);
@@ -1678,7 +1743,7 @@
           live = false;
         };
       },
-      [props.name, tab, diff],
+      [props.name, tab, props.refreshKey, diffRetryState[0]],
     );
 
     useEffect(
@@ -1695,7 +1760,7 @@
       [detail, tab],
     );
 
-    if (error)
+    if (error && !detail)
       return h(
         "div",
         { className: "rdv-empty rdv-error" },
@@ -1739,6 +1804,14 @@
     return h(
       "main",
       { className: "rdv-detail" },
+      error &&
+        h(
+          "div",
+          { className: "rdv-error", role: "alert" },
+          "Could not update request data; showing the last loaded detail. " +
+            (error.message || String(error)) +
+            " — use Refresh to retry.",
+        ),
       h(Timeline, {
         sessionId: detail.meta.session_id,
         selected: props.name,
@@ -1886,111 +1959,126 @@
       h(
         "div",
         { className: "rdv-detail-scroll" },
-        tab === "overview"
-          ? h(Overview, { detail: detail, onTab: selectTab })
-          : tab === "messages"
-            ? h(
-                React.Fragment,
-                null,
-                visible.length
-                  ? visible.map(function (x) {
-                      return h(Message, {
-                        key: x.index,
-                        message: x.message,
-                        index: x.index,
-                      });
-                    })
-                  : !outcomeMatches &&
-                      h(
+        h(
+          RenderBoundary,
+          { key: tab, scope: tab, resetKey: tab === "diff" ? diff : detail },
+          tab === "overview"
+            ? h(Overview, { detail: detail, onTab: selectTab })
+            : tab === "messages"
+              ? h(
+                  React.Fragment,
+                  null,
+                  visible.length
+                    ? visible.map(function (x) {
+                        return h(Message, {
+                          key: x.index,
+                          message: x.message,
+                          index: x.index,
+                        });
+                      })
+                    : !outcomeMatches &&
+                        h(
+                          "div",
+                          { className: "rdv-empty" },
+                          "No matching messages.",
+                        ),
+                  outcomeMatches && h(OutcomeMessage, { value: outcome }),
+                )
+              : tab === "prompt"
+                ? h(PromptMap, { analysis: analysis })
+                : tab === "tools"
+                  ? rankedTools.length
+                    ? h(
+                        "div",
+                        { className: "rdv-schema-list" },
+                        rankedTools.map(function (entry, rank) {
+                          const fn = entry.tool.function || entry.tool;
+                          return h(
+                            "details",
+                            {
+                              className: "rdv-schema",
+                              key: fn.name || entry.index,
+                            },
+                            h(
+                              "summary",
+                              null,
+                              h(
+                                "strong",
+                                null,
+                                "#" +
+                                  (rank + 1) +
+                                  " " +
+                                  (fn.name || "Tool " + (entry.index + 1)),
+                              ),
+                              h(
+                                "span",
+                                null,
+                                "≈" +
+                                  Math.ceil(
+                                    entry.characters / 4,
+                                  ).toLocaleString() +
+                                  " tok · " +
+                                  (fn.description || ""),
+                              ),
+                            ),
+                            h(
+                              "div",
+                              { className: "rdv-item-actions" },
+                              h(
+                                "button",
+                                {
+                                  onClick: function () {
+                                    copyText(fn);
+                                  },
+                                },
+                                "Copy schema",
+                              ),
+                              h(
+                                "button",
+                                {
+                                  onClick: function () {
+                                    copyText(
+                                      "$.tools[" +
+                                        entry.index +
+                                        "]" +
+                                        (entry.tool.function
+                                          ? ".function"
+                                          : ""),
+                                    );
+                                  },
+                                },
+                                "Copy JSONPath",
+                              ),
+                            ),
+                            h(
+                              "div",
+                              { className: "rdv-schema-body" },
+                              h(DataTree, { value: fn }),
+                            ),
+                          );
+                        }),
+                      )
+                    : h(
                         "div",
                         { className: "rdv-empty" },
-                        "No matching messages.",
-                      ),
-                outcomeMatches && h(OutcomeMessage, { value: outcome }),
-              )
-            : tab === "prompt"
-              ? h(PromptMap, { analysis: analysis })
-              : tab === "tools"
-                ? rankedTools.length
-                  ? h(
-                      "div",
-                      { className: "rdv-schema-list" },
-                      rankedTools.map(function (entry, rank) {
-                        const fn = entry.tool.function || entry.tool;
-                        return h(
-                          "details",
-                          {
-                            className: "rdv-schema",
-                            key: fn.name || entry.index,
-                          },
-                          h(
-                            "summary",
-                            null,
-                            h(
-                              "strong",
-                              null,
-                              "#" +
-                                (rank + 1) +
-                                " " +
-                                (fn.name || "Tool " + (entry.index + 1)),
-                            ),
-                            h(
-                              "span",
-                              null,
-                              "≈" +
-                                Math.ceil(
-                                  entry.characters / 4,
-                                ).toLocaleString() +
-                                " tok · " +
-                                (fn.description || ""),
-                            ),
-                          ),
-                          h(
-                            "div",
-                            { className: "rdv-item-actions" },
-                            h(
-                              "button",
-                              {
-                                onClick: function () {
-                                  copyText(fn);
-                                },
-                              },
-                              "Copy schema",
-                            ),
-                            h(
-                              "button",
-                              {
-                                onClick: function () {
-                                  copyText(
-                                    "$.request.body.tools[" + entry.index + "]",
-                                  );
-                                },
-                              },
-                              "Copy JSONPath",
-                            ),
-                          ),
-                          h(
-                            "div",
-                            { className: "rdv-schema-body" },
-                            h(DataTree, { value: fn }),
-                          ),
-                        );
-                      }),
-                    )
+                        "No tool schemas in this request.",
+                      )
                   : h(
-                      "div",
-                      { className: "rdv-empty" },
-                      "No tool schemas in this request.",
-                    )
-                : h(
-                    DiffExpansion.Provider,
-                    { value: diffExpansion[0] },
-                    h(Diff, {
-                      value: diff,
-                      loading: diffLoading,
-                      onSelect: props.onSelect,
-                    }),
-                  ),
+                      DiffExpansion.Provider,
+                      { value: diffExpansion[0] },
+                      h(Diff, {
+                        value: diff,
+                        loading: diffLoading,
+                        error: diffError,
+                        onRetry: function () {
+                          diffRetryState[1](function (value) {
+                            return value + 1;
+                          });
+                        },
+                        onSelect: props.onSelect,
+                      }),
+                    ),
+        ),
       ),
     );
   }
@@ -2007,8 +2095,12 @@
       selected = selectedState[0],
       setSelected = selectedState[1];
     const selectedSessionState = useState(null),
-      selectedSession = selectedSessionState[0],
+      selectedIdentity = selectedSessionState[0],
       setSelectedSession = selectedSessionState[1];
+    const selectedSession =
+      selectedIdentity && selectedIdentity.file === selected
+        ? selectedIdentity.sessionId
+        : null;
     const listState = useState(
         !window.matchMedia("(max-width: 800px)").matches,
       ),
@@ -2059,19 +2151,7 @@
           setSelected(function (old) {
             return old || (next[0] || {}).file || null;
           });
-          setSelectedSession(function (old) {
-            return (
-              old ||
-              (
-                next.find(function (i) {
-                  return i.file === (initial.dump || "");
-                }) ||
-                next[0] ||
-                {}
-              ).session_id ||
-              null
-            );
-          });
+
           setRefreshKey(function (value) {
             return value + 1;
           });
@@ -2109,7 +2189,7 @@
 
     function selectDump(file, sessionId) {
       setSelected(file);
-      if (sessionId) setSelectedSession(sessionId);
+      setSelectedSession({ file: file, sessionId: sessionId || null });
       updateURL({ dump: file });
       if (window.matchMedia("(max-width: 800px)").matches) setListOpen(false);
     }
@@ -2409,17 +2489,26 @@
                 title: "Drag to resize sessions",
               }),
               selected
-                ? h(Detail, {
-                    name: selected,
-                    key: selected,
-                    onSelect: function (file) {
-                      selectDump(file, selectedSession);
+                ? h(
+                    RenderBoundary,
+                    {
+                      key: selected,
+                      scope: "Request detail",
+                      resetKey: refreshKey,
                     },
-                    onToggleList: function () {
-                      setListOpen(!listOpen);
-                    },
-                    refreshKey: refreshKey,
-                  })
+                    h(Detail, {
+                      name: selected,
+                      key: selected,
+                      onDetailLoaded: setSelectedSession,
+                      onSelect: function (file) {
+                        selectDump(file, selectedSession);
+                      },
+                      onToggleList: function () {
+                        setListOpen(!listOpen);
+                      },
+                      refreshKey: refreshKey,
+                    }),
+                  )
                 : h("div", { className: "rdv-empty" }, "Select a dump."),
             ),
     );

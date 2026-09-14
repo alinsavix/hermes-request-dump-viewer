@@ -8,9 +8,12 @@ before conversation_loop checks HERMES_DUMP_REQUESTS for the same request.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
+import stat
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +21,7 @@ logger = logging.getLogger(__name__)
 _ENV_KEY = "HERMES_DUMP_REQUESTS"
 _STATE_FILE = "request-dump-viewer-state.json"
 _last_enabled: bool | None = None
+_reset_failed = False
 
 
 def _home() -> Path:
@@ -33,11 +37,25 @@ def _state_path() -> Path:
     return _home() / "state" / _STATE_FILE
 
 
+def _check_state_path(path: Path) -> None:
+    """Reject links/special files in the control path under the trusted home."""
+    for target, expected in ((path.parent, stat.S_ISDIR), (path, stat.S_ISREG)):
+        try:
+            mode = target.lstat().st_mode
+        except FileNotFoundError:
+            continue
+        if not expected(mode):
+            raise OSError("Unsafe capture state path type")
+
+
 def _read_enabled() -> bool:
+    if _reset_failed:
+        return False
     path = _state_path()
     try:
+        _check_state_path(path)
         data = json.loads(path.read_text(encoding="utf-8"))
-        return bool(data.get("enabled", False)) if isinstance(data, dict) else False
+        return isinstance(data, dict) and data.get("enabled") is True
     except FileNotFoundError:
         # Seed persistent state from the startup environment for compatibility
         # with users who already enabled capture through ~/.hermes/.env.
@@ -51,18 +69,31 @@ def _read_enabled() -> bool:
 
 
 def _reset_state_on_startup() -> None:
-    """Make capture opt-in for each gateway process lifetime."""
+    """Make capture opt-in on every registration (including agent discovery)."""
+    global _reset_failed
+    _reset_failed = True
+    os.environ.pop(_ENV_KEY, None)
     path = _state_path()
+    tmp_name: str | None = None
     try:
+        _check_state_path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_text(json.dumps({"enabled": False}, indent=2) + "\n", encoding="utf-8")
-        os.replace(tmp, path)
-        os.environ.pop(_ENV_KEY, None)
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as tmp:
+            tmp_name = tmp.name
+            tmp.write(json.dumps({"enabled": False}, indent=2) + "\n")
+            tmp.flush()
+            os.fsync(tmp.fileno())
+        _check_state_path(path)
+        os.replace(tmp_name, path)
+        _reset_failed = False
     except Exception as exc:
         # The pre-request hook still fails closed if the state file cannot be
         # written; keep startup resilient and make the failure visible.
         logger.warning("request-dump-viewer: could not reset capture state: %s", exc)
+    finally:
+        if tmp_name:
+            with contextlib.suppress(OSError):
+                Path(tmp_name).unlink(missing_ok=True)
 
 
 def on_pre_api_request(**_kwargs: Any) -> None:

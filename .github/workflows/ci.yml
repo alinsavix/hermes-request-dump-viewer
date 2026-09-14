@@ -63,7 +63,7 @@ jobs:
           plugin = yaml.safe_load(Path("plugin.yaml").read_text(encoding="utf-8"))
           assert manifest["name"] == plugin["name"]
           assert manifest["version"] == plugin["version"]
-          assert Path(manifest["entry"]).is_file()
+          assert Path("dashboard", manifest["entry"]).is_file()
           if manifest.get("css"):
               assert Path("dashboard", manifest["css"]).is_file()
           PY

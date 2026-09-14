@@ -26,7 +26,7 @@ test = [
 only-include = ["plugin.yaml", "__init__.py", "dashboard", "tests", "README.md", "LICENSE"]
 
 [tool.hatch.build.targets.sdist]
-include = ["plugin.yaml", "__init__.py", "dashboard", "tests", "README.md", "LICENSE", "pyproject.toml"]
+include = ["plugin.yaml", "__init__.py", "dashboard", "tests", "README.md", "LICENSE", "pyproject.toml", "uv.lock", "package.json", "package-lock.json"]
 
 [tool.ruff]
 target-version = "py311"
