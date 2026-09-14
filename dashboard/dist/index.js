@@ -584,6 +584,8 @@
 
   function Message(props) {
     const message = props.message || {};
+    const status = text(message.status);
+    const phase = text(message.phase);
     const calls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
     const summary = messageSummary(message, calls);
     const path = "$.messages[" + props.index + "]";
@@ -612,12 +614,11 @@
         h(
           "span",
           { className: "rdv-role" },
-          message.role === "tool" ? "tool result" : message.role || "unknown",
+          message.role === "tool" ? "tool result" : text(message.role) || "unknown",
         ),
         h("span", { className: "rdv-index" }, "#" + (props.index + 1)),
-        message.status &&
-          h("span", { className: "rdv-status" }, message.status),
-        message.phase && h("span", { className: "rdv-status" }, message.phase),
+        status && h("span", { className: "rdv-status" }, status),
+        phase && h("span", { className: "rdv-status" }, phase),
         message._responses_kind === "instructions" &&
           h("span", { className: "rdv-change" }, "Responses instructions"),
         props.added && h("span", { className: "rdv-change" }, "added"),
@@ -1395,25 +1396,28 @@
     return value &&
       typeof value === "object" &&
       Object.prototype.hasOwnProperty.call(value, key)
-      ? Object.assign({}, value, { [key]: parsed(value[key]) })
+      ? { ...value, [key]: parsed(value[key]) }
       : value;
   }
 
   function MessageTree(props) {
+    // Spread creates own data properties; assignment would invoke __proto__.
     // Decode only known message/argument boundaries, never arbitrary leaves.
     const message = parsedField(props.value, "content");
     const value =
       message && Array.isArray(message.tool_calls)
-        ? Object.assign({}, message, {
+        ? {
+            ...message,
             tool_calls: message.tool_calls.map(function (call) {
               const value = parsedField(call, "arguments");
               return value && value.function
-                ? Object.assign({}, value, {
+                ? {
+                    ...value,
                     function: parsedField(value.function, "arguments"),
-                  })
+                  }
                 : value;
             }),
-          })
+          }
         : message;
     return h(DataTree, { value: value });
   }

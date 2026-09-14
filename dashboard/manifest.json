@@ -3,7 +3,7 @@
   "label": "Request Dumps",
   "description": "Inspect Hermes LLM request dumps with message, tool-call, schema, and incremental-diff views.",
   "icon": "Search",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "tab": {
     "path": "/request-dumps",
     "position": "after:sessions"

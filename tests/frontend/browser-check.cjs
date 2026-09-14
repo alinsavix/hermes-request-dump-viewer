@@ -310,6 +310,46 @@ const diff = {
       ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)"],
       "Overview message references must not inherit the host's inverted code background",
     );
+    detail.messages = ["role", "status", "phase"].map(key => ({
+      role: "user", content: String.fromCharCode(0xd800) + " diagnostic",
+      [key]: { nested: "<img src=x onerror=alert(1)>" },
+    }));
+    outcome = { found: false };
+    await page.getByRole("tab", { name: /^Messages/ }).click();
+    await search.fill("");
+    await page.getByRole("button", { name: "Refresh", exact: true }).click();
+    await page.waitForFunction(() => document.querySelector("#message-1 .rdv-role")?.textContent.includes("nested"));
+    await page.locator("#message-outcome").waitFor({ state: "detached" });
+    await page.getByRole("button", { name: "Expand all", exact: true }).click();
+    assert.equal(await page.locator(".rdv-message img").count(), 0);
+    assert.equal(await page.locator(".rdv-message").count(), 3);
+    const unicodeDownloadEvent = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download redacted", exact: true }).click();
+    const unicodeDownload = await unicodeDownloadEvent;
+    const unicodeData = JSON.parse(fs.readFileSync(await unicodeDownload.path(), "utf8"));
+    assert.deepEqual(unicodeData.messages, detail.messages);
+    assert.equal(unicodeData.messages[0].content.charCodeAt(0), 0xd800);
+    const prototypeData = JSON.parse('{"role":"assistant","content":"{}","__proto__":{"auditProtoMarker":"root-prototype"},"tool_calls":[{"id":"special","__proto__":{"auditProtoMarker":"call-prototype"},"function":{"name":"lookup","arguments":"{}","__proto__":{"auditProtoMarker":"function-prototype"}}}]}');
+    diff.timeline = [{kind: "message", id: "prototype", before: prototypeData, after: prototypeData,
+      before_index: 0, after_index: 0, status: ["modified"]}];
+    await page.evaluate(() => {
+      window.prototypeWrites = [];
+      const original = Object.getOwnPropertyDescriptor(Object.prototype, "__proto__");
+      Object.defineProperty(Object.prototype, "__proto__", { ...original, set(value) {
+        if (value && Object.hasOwn(value, "auditProtoMarker")) window.prototypeWrites.push(value.auditProtoMarker);
+        original.set.call(this, value);
+      }});
+    });
+    await page.getByRole("tab", { name: "Diff", exact: true }).click();
+    await page.getByRole("button", { name: "Refresh", exact: true }).click();
+    await page.locator("#diff-prototype").waitFor();
+    await page.getByRole("button", { name: "Expand all", exact: true }).click();
+    const prototypeStrings = await page.locator("#diff-prototype .rdv-scalar-text").allTextContents();
+    for (const marker of ["root-prototype", "call-prototype", "function-prototype"]) {
+      assert.equal(prototypeStrings.filter(s => s === marker).length, 2);
+    }
+    assert.deepEqual(await page.evaluate(() => window.prototypeWrites), []);
+    assert.equal(await page.evaluate(() => Object.prototype.auditProtoMarker), undefined);
     assert.deepEqual(errors, [], "no uncaught Chrome errors");
     assert.ok(requests.every((request) => request.method === "GET"));
     console.log(

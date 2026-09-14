@@ -17,6 +17,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 try:
@@ -27,7 +28,15 @@ except ImportError:  # pragma: no cover - local test fallback
         return Path.home() / ".hermes"
 
 
-router = APIRouter()
+class EscapedJSONResponse(JSONResponse):
+    def render(self, content: Any) -> bytes:
+        # JSON can carry escaped lone surrogate code units, but UTF-8 cannot.
+        # Escape them on the wire instead of replacing/removing original data;
+        # this applies to keys, normal views and the intentional raw export.
+        return json.dumps(content, ensure_ascii=True, allow_nan=False, separators=(",", ":")).encode("utf-8")
+
+
+router = APIRouter(default_response_class=EscapedJSONResponse)
 _FILE_RE = re.compile(r"^request_dump_[A-Za-z0-9_.-]+\.json$")
 _SESSION_RE = re.compile(r"^[A-Za-z0-9_.-]{1,200}$")
 _SECRET_KEYS = {
@@ -179,12 +188,42 @@ def _redact(value: Any, key: str = "") -> Any:
     if isinstance(value, str):
         if value.startswith(("/", "?")) and not any(character.isspace() for character in value):
             return _redact_url(value)
-        return _URL_RE.sub(lambda match: _redact_url(match.group()), value)
+        return _redact_urls_in_text(value)
     return value
 
 
-# Parse URL tokens, never whole arbitrary prompts. Preserve surrounding prose.
-_URL_RE = re.compile(r"(?:\b[a-z][a-z0-9+.-]*://|(?<!\S)//)[^\s<>\"']+", re.IGNORECASE)
+_URL_MARKER_RE = re.compile(r"://|(?<!\S)//")
+_SCHEME_CHAR_RE = re.compile(r"[a-z0-9+.-]", re.IGNORECASE)
+_SCHEME_START_RE = re.compile(r"\b[a-z]", re.IGNORECASE)
+_URL_TAIL_RE = re.compile(r"[^\s<>\"']+")
+
+
+def _redact_urls_in_text(value: str) -> str:
+    # Find the delimiter FIRST. Trying an unbounded scheme at every word
+    # boundary makes ordinary dot-separated text quadratic. Backward scheme
+    # scans stop at delimiters; consumed URL bodies are never scanned again.
+    chunks = []
+    copied = cursor = 0
+    while match := _URL_MARKER_RE.search(value, cursor):
+        cursor = match.end()
+        start = match.start()
+        if match.group() == "://":
+            while start > copied and _SCHEME_CHAR_RE.fullmatch(value[start - 1]):
+                start -= 1
+            scheme = _SCHEME_START_RE.search(value, start, match.start())
+            if scheme is None:
+                continue
+            start = scheme.start()
+        tail = _URL_TAIL_RE.match(value, cursor)
+        if tail is None:
+            continue
+        cursor = tail.end()
+        chunks.extend((value[copied:start], _redact_url(value[start:cursor])))
+        copied = cursor
+    if not chunks:
+        return value
+    chunks.append(value[copied:])
+    return "".join(chunks)
 
 
 def _redact_url(value: str) -> str:
