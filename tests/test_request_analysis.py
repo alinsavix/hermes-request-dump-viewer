@@ -260,6 +260,77 @@ def test_session_timeline_uses_dump_timestamps_for_chronological_order():
     assert [item["file"] for item in result["items"]] == ["request_dump_earlier.json", "request_dump_later.json"]
 
 
+def test_aligned_diff_represents_true_reordering_without_add_remove_duplicates():
+    previous = [
+        {"role": "system", "content": "system"},
+        {"role": "assistant", "tool_calls": [{"id": "call-1", "function": {"name": "skill_view"}}]},
+        {"role": "user", "content": "question"},
+    ]
+    current = [previous[0], previous[2], previous[1]]
+
+    result = api._aligned_message_diff(previous, current)
+
+    assert result["unchanged_count"] == 2
+    assert result["unchanged_blocks"] == [
+        {"before_start": 0, "after_start": 0, "count": 1},
+        {"before_start": 1, "after_start": 2, "count": 1},
+    ]
+    # The old assertion encoded a reorder as deletion + insertion; schema v2
+    # retains one logical occurrence and adds only a lightweight source reference.
+    assert len(result["moved_messages"]) == 1
+    assert result["moved_messages"][0]["before_index"] == 2
+    assert result["moved_messages"][0]["after_index"] == 1
+    assert result["edited_messages"] == []
+    assert result["removed_messages"] == result["added_messages"] == []
+
+
+def test_aligned_diff_ignores_transport_ids_and_derived_tool_links():
+    previous = [
+        {
+            "role": "assistant",
+            "tool_calls": [{"id": "call-before", "function": {"name": "skill_view", "arguments": "{}"}}],
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call-before",
+            "name": "skill_view",
+            "content": "result",
+        },
+    ]
+    current = [
+        {
+            "role": "assistant",
+            "tool_calls": [{"id": "call-after", "function": {"name": "skill_view", "arguments": "{}"}}],
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call-after",
+            "name": "skill_view",
+            "content": "result",
+            "_tool_call": {"id": "call-after"},
+        },
+    ]
+
+    result = api._aligned_message_diff(previous, current)
+
+    assert result["unchanged_count"] == 2
+    assert result["moved_messages"] == []
+    assert result["removed_messages"] == []
+    assert result["added_messages"] == []
+
+
+def test_aligned_diff_does_not_invent_identity_for_unrelated_user_prompts():
+    previous = [{"role": "user", "content": "before"}]
+    current = [{"role": "user", "content": "after"}]
+
+    result = api._aligned_message_diff(previous, current)
+
+    # Same role/position alone is not evidence that two prompts are edits.
+    assert result["edited_messages"] == []
+    assert result["removed_messages"] == [{"index": 0, "message": previous[0]}]
+    assert result["added_messages"] == [{"index": 0, "message": current[0]}]
+
+
 def test_diff_uses_embedded_timestamps_when_mtime_order_disagrees():
     with tempfile.TemporaryDirectory() as temp_dir:
         root = Path(temp_dir)
@@ -290,7 +361,9 @@ def test_diff_uses_embedded_timestamps_when_mtime_order_disagrees():
         with patch.object(api, "get_hermes_home", return_value=root):
             result = api.get_diff(current.name)
     assert result["previous_file"] == previous.name
-    assert result["removed_messages"][0]["content"] == "previous"
+    assert result["removed_messages"][0]["message"]["content"] == "previous"
+    assert result["added_messages"][0]["message"]["content"] == "current"
+    assert result["edited_messages"] == []
 
 
 def test_composition_separates_request_sources_and_marks_message_indices():

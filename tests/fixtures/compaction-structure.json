@@ -1,0 +1,4129 @@
+{
+  "description": "Structure-only fixture derived from a real compaction. All content, names, IDs, and arguments replaced by synthetic equality-preserving labels. No raw request data.",
+  "before": [
+    {
+      "role": "system",
+      "content": "payload-1",
+      "_responses_kind": "metadata-2"
+    },
+    {
+      "role": "user",
+      "content": "payload-3"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-4"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-1",
+          "type": "function",
+          "function": {
+            "name": "tool-1",
+            "arguments": "{\"fixture\": \"argument-5\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-2",
+          "type": "function",
+          "function": {
+            "name": "tool-2",
+            "arguments": "{\"fixture\": \"argument-6\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-7",
+      "name": "tool-1",
+      "tool_call_id": "call-1"
+    },
+    {
+      "role": "tool",
+      "content": "payload-8",
+      "name": "tool-2",
+      "tool_call_id": "call-2"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-9"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-3",
+          "type": "function",
+          "function": {
+            "name": "tool-3",
+            "arguments": "{\"fixture\": \"argument-10\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-4",
+          "type": "function",
+          "function": {
+            "name": "tool-2",
+            "arguments": "{\"fixture\": \"argument-11\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-5",
+          "type": "function",
+          "function": {
+            "name": "tool-2",
+            "arguments": "{\"fixture\": \"argument-12\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-13",
+      "name": "tool-3",
+      "tool_call_id": "call-3"
+    },
+    {
+      "role": "tool",
+      "content": "payload-14",
+      "name": "tool-2",
+      "tool_call_id": "call-4"
+    },
+    {
+      "role": "tool",
+      "content": "payload-15",
+      "name": "tool-2",
+      "tool_call_id": "call-5"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-16"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-6",
+          "type": "function",
+          "function": {
+            "name": "tool-4",
+            "arguments": "{\"fixture\": \"argument-17\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-18",
+      "name": "tool-4",
+      "tool_call_id": "call-6"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-19"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-20",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-23"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-24"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-7",
+          "type": "function",
+          "function": {
+            "name": "tool-5",
+            "arguments": "{\"fixture\": \"argument-25\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-26",
+      "name": "tool-5",
+      "tool_call_id": "call-7"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-8",
+          "type": "function",
+          "function": {
+            "name": "tool-6",
+            "arguments": "{\"fixture\": \"argument-27\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-28",
+      "name": "tool-6",
+      "tool_call_id": "call-8"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-29"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-9",
+          "type": "function",
+          "function": {
+            "name": "tool-1",
+            "arguments": "{\"fixture\": \"argument-30\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-10",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-31\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-32",
+      "name": "tool-1",
+      "tool_call_id": "call-9"
+    },
+    {
+      "role": "tool",
+      "content": "payload-33",
+      "name": "tool-7",
+      "tool_call_id": "call-10"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-34"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-35",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-36"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-37"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-11",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-38\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-12",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-39\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-40",
+      "name": "tool-8",
+      "tool_call_id": "call-11"
+    },
+    {
+      "role": "tool",
+      "content": "payload-41",
+      "name": "tool-7",
+      "tool_call_id": "call-12"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-42"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-13",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-43\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-14",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-44\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-45",
+      "name": "tool-8",
+      "tool_call_id": "call-13"
+    },
+    {
+      "role": "tool",
+      "content": "payload-46",
+      "name": "tool-9",
+      "tool_call_id": "call-14"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-15",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-47\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-48",
+      "name": "tool-8",
+      "tool_call_id": "call-15"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-16",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-49\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-50",
+      "name": "tool-8",
+      "tool_call_id": "call-16"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-51"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-52",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-53"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-54"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-55",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-17",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-57\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-18",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-58\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-19",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-59\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-60",
+      "name": "tool-9",
+      "tool_call_id": "call-17"
+    },
+    {
+      "role": "tool",
+      "content": "payload-61",
+      "name": "tool-8",
+      "tool_call_id": "call-18"
+    },
+    {
+      "role": "tool",
+      "content": "payload-62",
+      "name": "tool-8",
+      "tool_call_id": "call-19"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-63"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-20",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-64\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-65",
+      "name": "tool-10",
+      "tool_call_id": "call-20"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-66"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-21",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-67\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-68",
+      "name": "tool-7",
+      "tool_call_id": "call-21"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-69"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-70",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-22",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-71\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-23",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-72\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-73",
+      "name": "tool-7",
+      "tool_call_id": "call-22"
+    },
+    {
+      "role": "tool",
+      "content": "payload-74",
+      "name": "tool-9",
+      "tool_call_id": "call-23"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-75"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-24",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-76\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-77",
+      "name": "tool-7",
+      "tool_call_id": "call-24"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-78"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-25",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-79\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-80",
+      "name": "tool-7",
+      "tool_call_id": "call-25"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-81",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-82"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-83"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-26",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-84\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-27",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-85\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-86",
+      "name": "tool-9",
+      "tool_call_id": "call-26"
+    },
+    {
+      "role": "tool",
+      "content": "payload-87",
+      "name": "tool-8",
+      "tool_call_id": "call-27"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-88",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-89"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-90"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-28",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-91\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-29",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-92\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-30",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-93\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-94",
+      "name": "tool-9",
+      "tool_call_id": "call-28"
+    },
+    {
+      "role": "tool",
+      "content": "payload-95",
+      "name": "tool-8",
+      "tool_call_id": "call-29"
+    },
+    {
+      "role": "tool",
+      "content": "payload-96",
+      "name": "tool-9",
+      "tool_call_id": "call-30"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-97"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-31",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-98\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-99",
+      "name": "tool-9",
+      "tool_call_id": "call-31"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-100"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-32",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-101\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-33",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-102\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-103",
+      "name": "tool-9",
+      "tool_call_id": "call-32"
+    },
+    {
+      "role": "tool",
+      "content": "payload-104",
+      "name": "tool-9",
+      "tool_call_id": "call-33"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-105"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-106",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-107"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-108"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-109",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-34",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-110\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-35",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-111\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-36",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-112\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-113",
+      "name": "tool-9",
+      "tool_call_id": "call-34"
+    },
+    {
+      "role": "tool",
+      "content": "payload-114",
+      "name": "tool-8",
+      "tool_call_id": "call-35"
+    },
+    {
+      "role": "tool",
+      "content": "payload-115",
+      "name": "tool-8",
+      "tool_call_id": "call-36"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-116"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-37",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-117\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-118",
+      "name": "tool-8",
+      "tool_call_id": "call-37"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-119"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-38",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-120\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-121",
+      "name": "tool-8",
+      "tool_call_id": "call-38"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-122"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-39",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-123\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-99",
+      "name": "tool-9",
+      "tool_call_id": "call-39"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-124"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-125",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-126"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-127"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-128",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-40",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-129\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-41",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-130\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-42",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-131\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-132",
+      "name": "tool-8",
+      "tool_call_id": "call-40"
+    },
+    {
+      "role": "tool",
+      "content": "payload-133",
+      "name": "tool-9",
+      "tool_call_id": "call-41"
+    },
+    {
+      "role": "tool",
+      "content": "payload-74",
+      "name": "tool-9",
+      "tool_call_id": "call-42"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-134"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-43",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-135\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-99",
+      "name": "tool-9",
+      "tool_call_id": "call-43"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-136"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-44",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-137\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-99",
+      "name": "tool-9",
+      "tool_call_id": "call-44"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-138"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-45",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-139\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-140",
+      "name": "tool-7",
+      "tool_call_id": "call-45"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-141"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-46",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-142\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-143",
+      "name": "tool-8",
+      "tool_call_id": "call-46"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-47",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-144\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-145",
+      "name": "tool-8",
+      "tool_call_id": "call-47"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-146"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-48",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-147\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-148",
+      "name": "tool-8",
+      "tool_call_id": "call-48"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-149"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-150",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-49",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-151\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-152",
+      "name": "tool-7",
+      "tool_call_id": "call-49"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-153"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-50",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-154\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-155",
+      "name": "tool-7",
+      "tool_call_id": "call-50"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-156"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-157",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-51",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-158\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-159",
+      "name": "tool-7",
+      "tool_call_id": "call-51"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-160"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-161",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-162"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-163"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-164"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-165",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-52",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-166\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-53",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-167\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-54",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-168\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-169",
+      "name": "tool-7",
+      "tool_call_id": "call-52"
+    },
+    {
+      "role": "tool",
+      "content": "payload-170",
+      "name": "tool-7",
+      "tool_call_id": "call-53"
+    },
+    {
+      "role": "tool",
+      "content": "payload-171",
+      "name": "tool-7",
+      "tool_call_id": "call-54"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-172"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-55",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-173\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-174",
+      "name": "tool-10",
+      "tool_call_id": "call-55"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-175"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-56",
+          "type": "function",
+          "function": {
+            "name": "tool-11",
+            "arguments": "{\"fixture\": \"argument-176\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-177",
+      "name": "tool-11",
+      "tool_call_id": "call-56"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-178"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-57",
+          "type": "function",
+          "function": {
+            "name": "tool-11",
+            "arguments": "{\"fixture\": \"argument-179\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-180",
+      "name": "tool-11",
+      "tool_call_id": "call-57"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-181"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-58",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-182\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-183",
+      "name": "tool-7",
+      "tool_call_id": "call-58"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-184"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-59",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-185\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-186",
+      "name": "tool-7",
+      "tool_call_id": "call-59"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-187"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-60",
+          "type": "function",
+          "function": {
+            "name": "tool-11",
+            "arguments": "{\"fixture\": \"argument-188\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-189",
+      "name": "tool-11",
+      "tool_call_id": "call-60"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-61",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-190\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-191",
+      "name": "tool-7",
+      "tool_call_id": "call-61"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-192"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-193",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-62",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-194\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-195",
+      "name": "tool-7",
+      "tool_call_id": "call-62"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-196"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-197",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-63",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-198\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-199",
+      "name": "tool-10",
+      "tool_call_id": "call-63"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-64",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-200\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-201",
+      "name": "tool-10",
+      "tool_call_id": "call-64"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-202"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-65",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-203\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-204",
+      "name": "tool-7",
+      "tool_call_id": "call-65"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-205"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-66",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-206\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-207",
+      "name": "tool-7",
+      "tool_call_id": "call-66"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-208"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-209",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-67",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-210\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-211",
+      "name": "tool-7",
+      "tool_call_id": "call-67"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-212"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-213",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-214"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-215"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-216",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-68",
+          "type": "function",
+          "function": {
+            "name": "tool-4",
+            "arguments": "{\"fixture\": \"argument-217\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-218",
+      "name": "tool-4",
+      "tool_call_id": "call-68"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-219"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-69",
+          "type": "function",
+          "function": {
+            "name": "tool-4",
+            "arguments": "{\"fixture\": \"argument-220\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-221",
+      "name": "tool-4",
+      "tool_call_id": "call-69"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-222"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-70",
+          "type": "function",
+          "function": {
+            "name": "tool-4",
+            "arguments": "{\"fixture\": \"argument-223\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-224",
+      "name": "tool-4",
+      "tool_call_id": "call-70"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-225"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-226",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-227"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-228"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-229",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-71",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-230\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-231",
+      "name": "tool-7",
+      "tool_call_id": "call-71"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-232"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-233",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-72",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-234\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-235",
+      "name": "tool-7",
+      "tool_call_id": "call-72"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-236"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-237",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-73",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-238\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-239",
+      "name": "tool-7",
+      "tool_call_id": "call-73"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-240"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-241",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-74",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-242\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-243",
+      "name": "tool-7",
+      "tool_call_id": "call-74"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-244"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-245",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-246"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-247"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-248",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-249"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-250"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-75",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-251\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-252",
+      "name": "tool-7",
+      "tool_call_id": "call-75"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-253"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-254",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-255"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-256"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-257",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-76",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-258\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-77",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-259\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-260",
+      "name": "tool-8",
+      "tool_call_id": "call-76"
+    },
+    {
+      "role": "tool",
+      "content": "payload-261",
+      "name": "tool-9",
+      "tool_call_id": "call-77"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-262"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-78",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-263\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-264",
+      "name": "tool-7",
+      "tool_call_id": "call-78"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-265"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-79",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-266\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-267",
+      "name": "tool-10",
+      "tool_call_id": "call-79"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-268"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-269",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-270"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-271"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-272",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-80",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-273\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-274",
+      "name": "tool-10",
+      "tool_call_id": "call-80"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-81",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-275\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-276",
+      "name": "tool-7",
+      "tool_call_id": "call-81"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-277",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-278"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-279"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-280",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-82",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-281\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-282",
+      "name": "tool-7",
+      "tool_call_id": "call-82"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-83",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-283\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-284",
+      "name": "tool-10",
+      "tool_call_id": "call-83"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-285"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-286",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-287"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-288"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-289",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-84",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-290\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-291",
+      "name": "tool-10",
+      "tool_call_id": "call-84"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-292",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-293"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-294"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-85",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-295\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-296",
+      "name": "tool-10",
+      "tool_call_id": "call-85"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-297",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-298"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-299"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-86",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-300\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-87",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-301\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-302",
+      "name": "tool-8",
+      "tool_call_id": "call-86"
+    },
+    {
+      "role": "tool",
+      "content": "payload-303",
+      "name": "tool-9",
+      "tool_call_id": "call-87"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-304"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-305",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-306"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-307",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-308"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-309"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-88",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-310\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-89",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-311\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-312",
+      "name": "tool-9",
+      "tool_call_id": "call-88"
+    },
+    {
+      "role": "tool",
+      "content": "payload-313",
+      "name": "tool-8",
+      "tool_call_id": "call-89"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-314",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-315"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-316"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-317",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-90",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-318\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-91",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-319\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-320",
+      "name": "tool-9",
+      "tool_call_id": "call-90"
+    },
+    {
+      "role": "tool",
+      "content": "payload-321",
+      "name": "tool-9",
+      "tool_call_id": "call-91"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-322"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-92",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-323\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-93",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-324\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-325",
+      "name": "tool-8",
+      "tool_call_id": "call-92"
+    },
+    {
+      "role": "tool",
+      "content": "payload-326",
+      "name": "tool-8",
+      "tool_call_id": "call-93"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-327"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-94",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-328\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-329",
+      "name": "tool-8",
+      "tool_call_id": "call-94"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-330"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-95",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-331\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-332",
+      "name": "tool-10",
+      "tool_call_id": "call-95"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-333"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-334",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-96",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-335\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-336",
+      "name": "tool-7",
+      "tool_call_id": "call-96"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-337",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-338"
+    }
+  ],
+  "after": [
+    {
+      "role": "system",
+      "content": "payload-339",
+      "_responses_kind": "metadata-2"
+    },
+    {
+      "role": "user",
+      "content": "payload-3"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-1",
+          "type": "function",
+          "function": {
+            "name": "tool-1",
+            "arguments": "{\"fixture\": \"argument-5\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-2",
+          "type": "function",
+          "function": {
+            "name": "tool-2",
+            "arguments": "{\"fixture\": \"argument-6\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-340",
+      "name": "tool-1",
+      "tool_call_id": "call-1"
+    },
+    {
+      "role": "tool",
+      "content": "payload-341",
+      "name": "tool-2",
+      "tool_call_id": "call-2"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-342"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-45",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-139\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-343",
+      "name": "tool-7",
+      "tool_call_id": "call-45"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-46",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-142\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-344",
+      "name": "tool-8",
+      "tool_call_id": "call-46"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-47",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-144\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-345",
+      "name": "tool-8",
+      "tool_call_id": "call-47"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-48",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-147\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-346",
+      "name": "tool-8",
+      "tool_call_id": "call-48"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-150",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-49",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-151\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-347",
+      "name": "tool-7",
+      "tool_call_id": "call-49"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-50",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-154\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-155",
+      "name": "tool-7",
+      "tool_call_id": "call-50"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-157",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-51",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-158\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-159",
+      "name": "tool-7",
+      "tool_call_id": "call-51"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-161",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-162"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-165",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-52",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-166\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-53",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-167\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-54",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-168\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-348",
+      "name": "tool-7",
+      "tool_call_id": "call-52"
+    },
+    {
+      "role": "tool",
+      "content": "payload-349",
+      "name": "tool-7",
+      "tool_call_id": "call-53"
+    },
+    {
+      "role": "tool",
+      "content": "payload-350",
+      "name": "tool-7",
+      "tool_call_id": "call-54"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-55",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-351\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-352",
+      "name": "tool-10",
+      "tool_call_id": "call-55"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-56",
+          "type": "function",
+          "function": {
+            "name": "tool-11",
+            "arguments": "{\"fixture\": \"argument-353\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-354",
+      "name": "tool-11",
+      "tool_call_id": "call-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-57",
+          "type": "function",
+          "function": {
+            "name": "tool-11",
+            "arguments": "{\"fixture\": \"argument-355\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-356",
+      "name": "tool-11",
+      "tool_call_id": "call-57"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-58",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-182\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-357",
+      "name": "tool-7",
+      "tool_call_id": "call-58"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-59",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-185\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-348",
+      "name": "tool-7",
+      "tool_call_id": "call-59"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-60",
+          "type": "function",
+          "function": {
+            "name": "tool-11",
+            "arguments": "{\"fixture\": \"argument-358\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-356",
+      "name": "tool-11",
+      "tool_call_id": "call-60"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-61",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-190\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-359",
+      "name": "tool-7",
+      "tool_call_id": "call-61"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-193",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-62",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-194\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-360",
+      "name": "tool-7",
+      "tool_call_id": "call-62"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-197",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-63",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-198\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-361",
+      "name": "tool-10",
+      "tool_call_id": "call-63"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-64",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-200\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-362",
+      "name": "tool-10",
+      "tool_call_id": "call-64"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-65",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-203\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-363",
+      "name": "tool-7",
+      "tool_call_id": "call-65"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-66",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-206\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-364",
+      "name": "tool-7",
+      "tool_call_id": "call-66"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-209",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-67",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-210\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-365",
+      "name": "tool-7",
+      "tool_call_id": "call-67"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-213",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-214"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-216",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-68",
+          "type": "function",
+          "function": {
+            "name": "tool-4",
+            "arguments": "{\"fixture\": \"argument-217\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-366",
+      "name": "tool-4",
+      "tool_call_id": "call-68"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-69",
+          "type": "function",
+          "function": {
+            "name": "tool-4",
+            "arguments": "{\"fixture\": \"argument-220\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-367",
+      "name": "tool-4",
+      "tool_call_id": "call-69"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-70",
+          "type": "function",
+          "function": {
+            "name": "tool-4",
+            "arguments": "{\"fixture\": \"argument-368\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-369",
+      "name": "tool-4",
+      "tool_call_id": "call-70"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-226",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-227"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-229",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-71",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-230\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-231",
+      "name": "tool-7",
+      "tool_call_id": "call-71"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-233",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-72",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-234\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-235",
+      "name": "tool-7",
+      "tool_call_id": "call-72"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-237",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-73",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-238\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-239",
+      "name": "tool-7",
+      "tool_call_id": "call-73"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-241",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-74",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-242\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-370",
+      "name": "tool-7",
+      "tool_call_id": "call-74"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-245",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-246"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-248",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-249"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-75",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-251\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-252",
+      "name": "tool-7",
+      "tool_call_id": "call-75"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-254",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-255"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-257",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-76",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-258\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-77",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-259\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-371",
+      "name": "tool-8",
+      "tool_call_id": "call-76"
+    },
+    {
+      "role": "tool",
+      "content": "payload-261",
+      "name": "tool-9",
+      "tool_call_id": "call-77"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-78",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-263\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-264",
+      "name": "tool-7",
+      "tool_call_id": "call-78"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-79",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-266\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-267",
+      "name": "tool-10",
+      "tool_call_id": "call-79"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-269",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-270"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-272",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-80",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-273\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-274",
+      "name": "tool-10",
+      "tool_call_id": "call-80"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-81",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-275\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-276",
+      "name": "tool-7",
+      "tool_call_id": "call-81"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-277",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-278"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-280",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-82",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-281\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-282",
+      "name": "tool-7",
+      "tool_call_id": "call-82"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-83",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-283\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-284",
+      "name": "tool-10",
+      "tool_call_id": "call-83"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-286",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-287"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-289",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-84",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-290\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-291",
+      "name": "tool-10",
+      "tool_call_id": "call-84"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-292",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-293"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-85",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-295\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-296",
+      "name": "tool-10",
+      "tool_call_id": "call-85"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-297",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-298"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-86",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-300\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-87",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-301\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-372",
+      "name": "tool-8",
+      "tool_call_id": "call-86"
+    },
+    {
+      "role": "tool",
+      "content": "payload-303",
+      "name": "tool-9",
+      "tool_call_id": "call-87"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-305",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-306"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-307",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-308"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-88",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-310\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-89",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-311\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-312",
+      "name": "tool-9",
+      "tool_call_id": "call-88"
+    },
+    {
+      "role": "tool",
+      "content": "payload-313",
+      "name": "tool-8",
+      "tool_call_id": "call-89"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-314",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-315"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-317",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-90",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-318\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-91",
+          "type": "function",
+          "function": {
+            "name": "tool-9",
+            "arguments": "{\"fixture\": \"argument-319\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-320",
+      "name": "tool-9",
+      "tool_call_id": "call-90"
+    },
+    {
+      "role": "tool",
+      "content": "payload-321",
+      "name": "tool-9",
+      "tool_call_id": "call-91"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-92",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-323\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-93",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-324\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-325",
+      "name": "tool-8",
+      "tool_call_id": "call-92"
+    },
+    {
+      "role": "tool",
+      "content": "payload-326",
+      "name": "tool-8",
+      "tool_call_id": "call-93"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-94",
+          "type": "function",
+          "function": {
+            "name": "tool-8",
+            "arguments": "{\"fixture\": \"argument-328\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-329",
+      "name": "tool-8",
+      "tool_call_id": "call-94"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-95",
+          "type": "function",
+          "function": {
+            "name": "tool-10",
+            "arguments": "{\"fixture\": \"argument-331\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-332",
+      "name": "tool-10",
+      "tool_call_id": "call-95"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-334",
+      "status": "metadata-21",
+      "phase": "metadata-56"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call-96",
+          "type": "function",
+          "function": {
+            "name": "tool-7",
+            "arguments": "{\"fixture\": \"argument-335\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "payload-336",
+      "name": "tool-7",
+      "tool_call_id": "call-96"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-337",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-338"
+    },
+    {
+      "role": "reasoning",
+      "content": "payload-373"
+    },
+    {
+      "role": "assistant",
+      "content": "payload-374",
+      "status": "metadata-21",
+      "phase": "metadata-22"
+    },
+    {
+      "role": "user",
+      "content": "payload-375"
+    }
+  ]
+}

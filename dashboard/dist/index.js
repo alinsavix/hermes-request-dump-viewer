@@ -9,6 +9,42 @@
   const useState = React.useState;
   const useEffect = React.useEffect;
   const useMemo = React.useMemo;
+  const DiffExpansion = React.createContext(null);
+
+  function useDiffExpansion(defaultOpen) {
+    const command = React.useContext(DiffExpansion);
+    const state = useState({
+      command: command,
+      open: command ? command.open : defaultOpen,
+    });
+    if (state[0].command !== command) {
+      state[1]({
+        command: command,
+        open: command ? command.open : defaultOpen,
+      });
+    }
+    return [
+      state[0].open,
+      function (open) {
+        state[1]({ command: command, open: open });
+      },
+    ];
+  }
+
+  function TreeDetails(props) {
+    const expanded = useDiffExpansion(props.open);
+    return h(
+      "details",
+      {
+        className: props.className,
+        open: expanded[0],
+        onToggle: function (event) {
+          expanded[1](event.currentTarget.open);
+        },
+      },
+      props.children,
+    );
+  }
 
   function api(path, options) {
     return SDK.fetchJSON("/api/plugins/request-dump-viewer" + path, options);
@@ -207,7 +243,7 @@
               ? item.name || item.type || item.role || "Item " + (i + 1)
               : "Item " + (i + 1);
           return h(
-            "details",
+            TreeDetails,
             { className: "rdv-node", open: value.length <= 3, key: i },
             h(
               "summary",
@@ -1303,6 +1339,129 @@
     );
   }
 
+  function diffPosition(index) {
+    return Number.isInteger(index) ? "#" + (index + 1) : "—";
+  }
+
+  function DiffMessage(props) {
+    const row = props.row;
+    const expanded = useDiffExpansion(false);
+    const message = row.after || row.before || {};
+    const calls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    const modified = row.status.includes("modified");
+    return h(
+      "details",
+      {
+        id: "diff-" + row.id,
+        "data-diff-id": row.id,
+        className: "rdv-diff-row",
+        open: expanded[0],
+        onToggle: function (event) {
+          expanded[1](event.currentTarget.open);
+        },
+      },
+      h(
+        "summary",
+        null,
+        h(
+          "span",
+          { className: "rdv-diff-position" },
+          diffPosition(row.before_index) +
+            " → " +
+            diffPosition(row.after_index),
+        ),
+        h("strong", { className: "rdv-diff-status" }, row.status.join(" · ")),
+        h(
+          "span",
+          { className: "rdv-diff-preview" },
+          (message.role || "message") + " · " + messageSummary(message, calls),
+        ),
+      ),
+      expanded[0] &&
+        h(
+          "div",
+          { className: "rdv-diff-content" },
+          modified
+            ? h(
+                "div",
+                { className: "rdv-diff-pair" },
+                h(
+                  "section",
+                  null,
+                  h("h4", null, "Before " + diffPosition(row.before_index)),
+                  h(DataTree, { value: row.before }),
+                ),
+                h(
+                  "section",
+                  null,
+                  h("h4", null, "After " + diffPosition(row.after_index)),
+                  h(DataTree, { value: row.after }),
+                ),
+              )
+            : h(DataTree, { value: message }),
+        ),
+    );
+  }
+
+  function DiffGroup(props) {
+    const expanded = useDiffExpansion(false);
+    const rows = props.rows;
+    const first = rows[0],
+      last = rows[rows.length - 1];
+    return h(
+      "details",
+      {
+        className: "rdv-diff-group rdv-diff-" + props.status,
+        open: expanded[0],
+        onToggle: function (event) {
+          expanded[1](event.currentTarget.open);
+        },
+      },
+      h(
+        "summary",
+        null,
+        rows.length +
+          " " +
+          props.status +
+          " messages · #" +
+          (first.before_index + 1) +
+          "–#" +
+          (last.before_index + 1) +
+          (props.status === "removed"
+            ? ""
+            : " → #" + (first.after_index + 1) + "–#" + (last.after_index + 1)),
+      ),
+      expanded[0] &&
+        rows.map(function (row) {
+          return h(DiffMessage, { key: row.id, row: row });
+        }),
+    );
+  }
+
+  function diffGroups(rows) {
+    const groups = [];
+    rows.forEach(function (row) {
+      const previous = groups[groups.length - 1];
+      const last = previous && previous.rows[previous.rows.length - 1];
+      const status =
+        row.kind === "message" &&
+        row.status.length === 1 &&
+        ["unchanged", "removed"].includes(row.status[0])
+          ? row.status[0]
+          : null;
+      if (
+        status &&
+        previous &&
+        previous.status === status &&
+        last.before_index + 1 === row.before_index &&
+        (status === "removed" || last.after_index + 1 === row.after_index)
+      )
+        previous.rows.push(row);
+      else groups.push({ status: status, rows: [row] });
+    });
+    return groups;
+  }
+
   function Diff(props) {
     const d = props.value;
     if (props.loading)
@@ -1314,13 +1473,25 @@
         { className: "rdv-empty" },
         "First dump in this session — nothing earlier to compare.",
       );
+    if (d.schema_version !== 2 || !Array.isArray(d.timeline) || !d.summary) {
+      return h(
+        "div",
+        { className: "rdv-empty rdv-error", role: "alert" },
+        "Diff format changed. Please restart the dashboard, then refresh this page.",
+      );
+    }
+    const counts = d.summary;
     return h(
       "div",
       { className: "rdv-stack" },
       h(
         "div",
         { className: "rdv-diff-meta" },
-        d.common_messages + " unchanged prefix messages compared with ",
+        ["unchanged", "modified", "moved", "added", "removed"]
+          .map(function (status) {
+            return counts[status] + " " + status;
+          })
+          .join(" · ") + " · compared with ",
         d.previous_sequence == null
           ? "the previous request"
           : h(
@@ -1334,45 +1505,49 @@
               "request #" + d.previous_sequence,
             ),
       ),
-      d.removed_messages.length > 0 &&
-        h(
-          "section",
-          null,
-          h(
-            "h3",
-            null,
-            "Removed or changed (" + d.removed_messages.length + ")",
-          ),
-          d.removed_messages.map(function (m, i) {
-            return h(Message, {
-              key: "r" + i,
-              message: m,
-              index: d.common_messages + i,
-              removed: true,
-            });
-          }),
-        ),
-      d.added_messages.length > 0 &&
-        h(
-          "section",
-          null,
-          h("h3", null, "Added or changed (" + d.added_messages.length + ")"),
-          d.added_messages.map(function (m, i) {
-            return h(Message, {
-              key: "a" + i,
-              message: m,
-              index: d.common_messages + i,
-              added: true,
-            });
-          }),
-        ),
-      !d.removed_messages.length &&
-        !d.added_messages.length &&
-        h(
-          "div",
-          { className: "rdv-empty" },
-          "Requests have identical messages.",
-        ),
+      h(
+        "p",
+        { className: "rdv-analysis-note" },
+        "Before → After shows message positions. Numbering shifts alone are not moves. Modified and moved can overlap.",
+      ),
+      h(
+        "div",
+        { className: "rdv-diff-timeline", "aria-label": "Message changes" },
+        diffGroups(d.timeline).map(function (group) {
+          const row = group.rows[0];
+          if (row.kind === "move_source") {
+            return h(
+              "p",
+              { key: row.id, className: "rdv-diff-source" },
+              diffPosition(row.before_index) + " · ",
+              h(
+                "a",
+                {
+                  href: "#diff-" + row.target_id,
+                  onClick: function (event) {
+                    event.preventDefault();
+                    const target = document.getElementById(
+                      "diff-" + row.target_id,
+                    );
+                    if (target) {
+                      target.open = true;
+                      target.scrollIntoView({ block: "center" });
+                    }
+                  },
+                },
+                "Moved to " + diffPosition(row.after_index),
+              ),
+            );
+          }
+          return group.status && group.rows.length > 1
+            ? h(DiffGroup, {
+                key: row.id,
+                rows: group.rows,
+                status: group.status,
+              })
+            : h(DiffMessage, { key: row.id, row: row });
+        }),
+      ),
     );
   }
 
@@ -1402,6 +1577,7 @@
   }
 
   function Detail(props) {
+    const diffExpansion = useState(null);
     const state = useState(null),
       detail = state[0],
       setDetail = state[1];
@@ -1432,6 +1608,12 @@
       updateURL({ tab: value, message: null });
     }
     function setDetails(open) {
+      if (tab === "diff") {
+        // A fresh command reaches lazy descendants on their first mount.
+        // It is not a permanent override: manual toggles own local state.
+        diffExpansion[1]({ open: open });
+        return;
+      }
       document
         .querySelectorAll(".rdv-detail-scroll details")
         .forEach(function (node) {
@@ -1450,6 +1632,7 @@
         setOutcome(null);
         setError(null);
         setDiff(null);
+        diffExpansion[1](null);
         updateURL({ dump: props.name });
         api("/dumps/" + encodeURIComponent(props.name))
           .then(function (v) {
@@ -1538,8 +1721,8 @@
     });
     const outcomeMatches = Boolean(
       outcome &&
-        outcome.found &&
-        (!needle || text(outcome.content).toLowerCase().indexOf(needle) >= 0),
+      outcome.found &&
+      (!needle || text(outcome.content).toLowerCase().indexOf(needle) >= 0),
     );
     const rankedTools = detail.tools
       .map(function (tool, i) {
@@ -1600,70 +1783,71 @@
           }),
         ),
       ),
-      h(
-        "div",
-        { className: "rdv-detail-actions" },
+      tab !== "overview" &&
         h(
-          "button",
-          {
-            onClick: function () {
-              setDetails(true);
+          "div",
+          { className: "rdv-detail-actions" },
+          h(
+            "button",
+            {
+              onClick: function () {
+                setDetails(true);
+              },
             },
-          },
-          "Expand all",
-        ),
-        h(
-          "button",
-          {
-            onClick: function () {
-              setDetails(false);
+            "Expand all",
+          ),
+          h(
+            "button",
+            {
+              onClick: function () {
+                setDetails(false);
+              },
             },
-          },
-          "Collapse all",
-        ),
-        h(
-          "button",
-          {
-            onClick: function () {
-              copyText(detail);
+            "Collapse all",
+          ),
+          h(
+            "button",
+            {
+              onClick: function () {
+                copyText(detail);
+              },
             },
-          },
-          "Copy redacted JSON",
-        ),
-        h(
-          "button",
-          {
-            onClick: function () {
-              downloadJSON(
-                detail.meta.file.replace(/\.json$/, "-redacted.json"),
-                detail,
-              );
+            "Copy redacted JSON",
+          ),
+          h(
+            "button",
+            {
+              onClick: function () {
+                downloadJSON(
+                  detail.meta.file.replace(/\.json$/, "-redacted.json"),
+                  detail,
+                );
+              },
             },
-          },
-          "Download redacted",
-        ),
-        h(
-          "button",
-          {
-            title:
-              "Contains the complete unredacted provider request, including sensitive values",
-            onClick: function () {
-              if (
-                !window.confirm(
-                  "Download the complete unredacted request? It may contain credentials, tokens, personal data, and other sensitive values.",
+            "Download redacted",
+          ),
+          h(
+            "button",
+            {
+              title:
+                "Contains the complete unredacted provider request, including sensitive values",
+              onClick: function () {
+                if (
+                  !window.confirm(
+                    "Download the complete unredacted request? It may contain credentials, tokens, personal data, and other sensitive values.",
+                  )
                 )
-              )
-                return;
-              api("/dumps/" + encodeURIComponent(props.name) + "/raw")
-                .then(function (raw) {
-                  downloadJSON(detail.meta.file, raw);
-                })
-                .catch(setError);
+                  return;
+                api("/dumps/" + encodeURIComponent(props.name) + "/raw")
+                  .then(function (raw) {
+                    downloadJSON(detail.meta.file, raw);
+                  })
+                  .catch(setError);
+              },
             },
-          },
-          "Download raw (sensitive)",
+            "Download raw (sensitive)",
+          ),
         ),
-      ),
       tab === "messages" &&
         h(
           "div",
@@ -1798,11 +1982,15 @@
                       { className: "rdv-empty" },
                       "No tool schemas in this request.",
                     )
-                : h(Diff, {
-                    value: diff,
-                    loading: diffLoading,
-                    onSelect: props.onSelect,
-                  }),
+                : h(
+                    DiffExpansion.Provider,
+                    { value: diffExpansion[0] },
+                    h(Diff, {
+                      value: diff,
+                      loading: diffLoading,
+                      onSelect: props.onSelect,
+                    }),
+                  ),
       ),
     );
   }

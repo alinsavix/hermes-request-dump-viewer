@@ -8,6 +8,7 @@ import os
 import re
 import sqlite3
 import tempfile
+from bisect import bisect_left
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -136,6 +137,17 @@ def _redact(value: Any, key: str = "") -> Any:
         return {k: _redact(v, str(k)) for k, v in value.items()}
     if isinstance(value, list):
         return [_redact(v) for v in value]
+    if isinstance(value, str) and value.lstrip().startswith(("{", "[")):
+        # Tool arguments/results often embed structured credentials in JSON
+        # strings. Preserve their transport type (and untouched formatting).
+        try:
+            parsed = json.loads(value)
+        except (ValueError, RecursionError):
+            pass
+        else:
+            safe = _redact(parsed)
+            if safe != parsed:
+                return json.dumps(safe, ensure_ascii=False)
     if isinstance(value, str) and "?" in value:
         parts = urlsplit(value)
         query = parse_qsl(parts.query, keep_blank_values=True)
@@ -767,6 +779,424 @@ def get_dump(name: str):
     }
 
 
+def _message_matching_value(message: Any) -> Any:
+    if not isinstance(message, dict):
+        return message
+    value = dict(message)
+    value.pop("_tool_call", None)
+    value.pop("id", None)
+    if isinstance(value.get("tool_calls"), list):
+        calls = []
+        for call in value["tool_calls"]:
+            if isinstance(call, dict):
+                call = dict(call)
+                call.pop("id", None)
+                call.pop("call_id", None)
+                if isinstance(call.get("function"), dict):
+                    fn = dict(call["function"])
+                    if "arguments" in fn:
+                        fn["arguments"] = _parsed_arguments(fn["arguments"])
+                    call["function"] = fn
+                elif "arguments" in call:
+                    call["arguments"] = _parsed_arguments(call["arguments"])
+            calls.append(call)
+        value["tool_calls"] = calls
+    value.pop("tool_call_id", None)
+    return value
+
+
+def _message_fingerprint(message: Any) -> str:
+    return json.dumps(_message_matching_value(message), sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
+
+
+def _message_identity(message: Any) -> tuple | None:
+    """Provider identity is namespaced: a call and its result are not one row."""
+    if not isinstance(message, dict):
+        return None
+    if message.get("role") == "tool" and message.get("tool_call_id") is not None:
+        return ("stable_result_id", str(message["tool_call_id"]))
+    calls = message.get("tool_calls")
+    if isinstance(calls, list) and calls:
+        ids = [call.get("id") or call.get("call_id") for call in calls if isinstance(call, dict)]
+        if len(ids) == len(calls) and all(ids):
+            return ("stable_call_id", tuple(str(value) for value in ids))
+    return None
+
+
+def _monotonic_backbone(pairs: dict[int, int]) -> set[int]:
+    # Longest increasing subsequence of old indices in new order. Absolute
+    # index shifts caused by insertions/deletions are not moves. Ties choose
+    # the lower old-index tail, deterministically.
+    tails: list[int] = []
+    tail_rows: list[int] = []
+    parents: dict[int, int | None] = {}
+    for after_index in sorted(pairs):
+        before_index = pairs[after_index]
+        slot = bisect_left(tails, before_index)
+        parents[after_index] = tail_rows[slot - 1] if slot else None
+        if slot == len(tails):
+            tails.append(before_index)
+            tail_rows.append(after_index)
+        else:
+            tails[slot] = before_index
+            tail_rows[slot] = after_index
+    backbone: set[int] = set()
+    cursor = tail_rows[-1] if tail_rows else None
+    while cursor is not None:
+        backbone.add(cursor)
+        cursor = parents[cursor]
+
+    return backbone
+
+
+def _aligned_message_diff(previous: list[Any], current: list[Any]) -> dict[str, Any]:
+    """Align raw occurrences; redact only at the response boundary.
+
+    ``timeline`` contains one message row per logical occurrence. Move-source
+    rows are references, never additional messages and never summary counts.
+    ``unchanged`` excludes moved-only rows; ``modified`` and ``moved`` overlap
+    for edited moves, so their sum alone is not a retained-message count.
+    Removals and move sources stay in old order immediately before the next
+    surviving in-order anchor, or at the tail when no such anchor remains.
+    Legacy aggregate views below are compatibility-only; consumers use rows.
+    """
+    previous_keys = [_message_fingerprint(message) for message in previous]
+    current_keys = [_message_fingerprint(message) for message in current]
+    pairs: dict[int, int] = {}
+    bases: dict[int, str] = {}
+    used: set[int] = set()
+    old_identities: dict[tuple, list[int]] = {}
+    new_identities: dict[tuple, list[int]] = {}
+    for messages, identities in ((previous, old_identities), (current, new_identities)):
+        for index, message in enumerate(messages):
+            identity = _message_identity(message)
+            if identity is not None:
+                identities.setdefault(identity, []).append(index)
+    for identity, new_indices in new_identities.items():
+        old_indices = old_identities.get(identity, [])
+        # Unique identities are anchors, even when their payload changed.
+        # Reused identities must wait until these anchors are all reserved.
+        if len(old_indices) == len(new_indices) == 1:
+            before_index, after_index = old_indices[0], new_indices[0]
+            pairs[after_index] = before_index
+            bases[after_index] = identity[0]
+            used.add(before_index)
+
+    # Bound Hunt-Szymanski's match-pair work across the entire request, not
+    # per anchor gap. Above this budget keep a monotonic exact subset only;
+    # ambiguous leftovers remain removed/added rather than speculative moves.
+    # This conservative fallback need not produce a minimal edit script.
+    match_budget = 250_000
+    limited_old: set[int] = set()
+    limited_new: set[int] = set()
+
+    def match_exact(old_indices, new_indices, old_keys, new_keys, basis):
+        nonlocal match_budget
+        old_indices = [i for i in old_indices if i not in limited_old]
+        new_indices = [i for i in new_indices if i not in limited_new]
+        # Keys absent on the opposite side cannot participate in any LCS.
+        common = {old_keys[i] for i in old_indices} & {new_keys[i] for i in new_indices}
+        old_indices = [i for i in old_indices if old_keys[i] in common]
+        new_indices = [i for i in new_indices if new_keys[i] in common]
+
+        def retain(before_index, after_index):
+            pairs[after_index] = before_index
+            bases[after_index] = basis
+            used.add(before_index)
+
+        # Safe common edges make identical/repetitive requests linear.
+        start = 0
+        while start < min(len(old_indices), len(new_indices)) and old_keys[old_indices[start]] == new_keys[new_indices[start]]:
+            retain(old_indices[start], new_indices[start])
+            start += 1
+        old_end, new_end = len(old_indices), len(new_indices)
+        while old_end > start and new_end > start and old_keys[old_indices[old_end - 1]] == new_keys[new_indices[new_end - 1]]:
+            old_end -= 1
+            new_end -= 1
+            retain(old_indices[old_end], new_indices[new_end])
+        old_indices, new_indices = old_indices[start:old_end], new_indices[start:new_end]
+        if not old_indices or not new_indices:
+            return
+
+        # A deletion/insertion-only subsequence has an exact linear solution,
+        # even if neither edge matched. Do not approximate its move counts.
+        def subsequence(short, long, short_keys, long_keys):
+            matches = []
+            cursor = 0
+            for index in long:
+                if short_keys[short[cursor]] == long_keys[index]:
+                    matches.append((short[cursor], index))
+                    cursor += 1
+                    if cursor == len(short):
+                        return matches
+            return None
+
+        if len(new_indices) <= len(old_indices):
+            matches = subsequence(new_indices, old_indices, new_keys, old_keys)
+            if matches is not None:
+                for after_index, before_index in matches:
+                    retain(before_index, after_index)
+                return
+        if len(old_indices) <= len(new_indices):
+            matches = subsequence(old_indices, new_indices, old_keys, new_keys)
+            if matches is not None:
+                for before_index, after_index in matches:
+                    retain(before_index, after_index)
+                return
+
+        positions: dict[Any, list[int]] = {}
+        for index in old_indices:
+            positions.setdefault(old_keys[index], []).append(index)
+        work = sum(len(positions.get(new_keys[i], [])) for i in new_indices)
+        if work > match_budget:
+            cursor = -1
+            for after_index in new_indices:
+                candidates = positions.get(new_keys[after_index], [])
+                slot = bisect_left(candidates, cursor + 1)
+                if slot < len(candidates):
+                    cursor = candidates[slot]
+                    retain(cursor, after_index)
+            limited_old.update(i for i in old_indices if i not in used)
+            limited_new.update(i for i in new_indices if i not in pairs)
+            return
+        match_budget -= work
+        # Hunt-Szymanski LCS for the bounded, nontrivial middle.
+        tails = []
+        links = []
+        for after_index in new_indices:
+            for before_index in reversed(positions.get(new_keys[after_index], [])):
+                slot = bisect_left(tails, before_index)
+                link = (before_index, after_index, links[slot - 1] if slot else None)
+                if slot == len(tails):
+                    tails.append(before_index)
+                    links.append(link)
+                else:
+                    tails[slot] = before_index
+                    links[slot] = link
+        link = links[-1] if links else None
+        while link is not None:
+            before_index, after_index, link = link
+            retain(before_index, after_index)
+        # Reverse once, pop from the end: FIFO recovery must not shift a
+        # repetitive list on every removal (another quadratic operation).
+        remaining: dict[Any, list[int]] = {}
+        for index in reversed(old_indices):
+            if index not in used:
+                remaining.setdefault(old_keys[index], []).append(index)
+        for index in new_indices:
+            candidates = remaining.get(new_keys[index], [])
+            if index not in pairs and candidates:
+                retain(candidates.pop(), index)
+
+    def match_anchored_exact(old_indices, new_indices, old_keys, new_keys, basis):
+        if not old_indices or not new_indices:
+            return
+        # Repeated equal payloads prefer their occurrence on the correct side
+        # of surviving stable-ID anchors, rather than stealing an earlier copy.
+        anchors = [(pairs[index], index) for index in sorted(_monotonic_backbone(pairs))]
+        old_start = new_start = -1
+        for old_end, new_end in [*anchors, (len(previous), len(current))]:
+            match_exact(
+                [
+                    i
+                    for i in old_indices[bisect_left(old_indices, old_start + 1) : bisect_left(old_indices, old_end)]
+                    if i not in used
+                ],
+                [
+                    i
+                    for i in new_indices[bisect_left(new_indices, new_start + 1) : bisect_left(new_indices, new_end)]
+                    if i not in pairs
+                ],
+                old_keys,
+                new_keys,
+                basis,
+            )
+            old_start, new_start = old_end, new_end
+        # Exact occurrences crossing an anchor can still be real moves.
+        match_exact(
+            [i for i in old_indices if i not in used], [i for i in new_indices if i not in pairs], old_keys, new_keys, basis
+        )
+
+    shared_identities = old_identities.keys() & new_identities.keys()
+
+    def exact_key(message, fingerprint, side, index):
+        identity = _message_identity(message)
+        if identity is None and isinstance(message, dict) and message.get("role") == "tool":
+            # Unknown result provenance cannot be inferred from equal output.
+            return (side, index)
+        return (identity, fingerprint)
+
+    # Align ALL exact evidence together before reserving reused identities.
+    # A prefix/suffix in a tool-only projection is not a safe common edge:
+    # it can steal an occurrence across an intervening ordinary message.
+    # Strict IDs plus fingerprints preserve that order without rekeying calls
+    # or guessing edits; unique-ID edits above remain reserved anchors.
+    old_exact_keys = [exact_key(message, previous_keys[i], "old", i) for i, message in enumerate(previous)]
+    new_exact_keys = [exact_key(message, current_keys[i], "new", i) for i, message in enumerate(current)]
+    match_anchored_exact(
+        [i for i in range(len(previous)) if i not in used],
+        [i for i in range(len(current)) if i not in pairs],
+        old_exact_keys,
+        new_exact_keys,
+        "canonical_exact",
+    )
+    for after_index in pairs:
+        identity = _message_identity(current[after_index])
+        if identity is not None:
+            bases[after_index] = identity[0]
+    for identity in sorted(shared_identities):
+        old_remaining = [i for i in old_identities[identity] if i not in used and i not in limited_old]
+        new_remaining = [i for i in new_identities[identity] if i not in pairs and i not in limited_new]
+        if len(old_remaining) == len(new_remaining) == 1:
+            before_index, after_index = old_remaining[0], new_remaining[0]
+            pairs[after_index] = before_index
+            bases[after_index] = identity[0]
+            used.add(before_index)
+
+    # A leftover occurrence of a surviving identity cannot be rekeyed to a
+    # conflicting call merely because its ID-stripped payload is equal.
+    def canonical_key(message, fingerprint):
+        identity = _message_identity(message)
+        return (fingerprint, identity if identity in shared_identities else None)
+
+    # Calls must be aligned before results: equal generic outputs such as "ok"
+    # are not identity evidence when they originate from unrelated calls.
+    def is_result(message):
+        return isinstance(message, dict) and message.get("role") == "tool"
+
+    match_anchored_exact(
+        [i for i, message in enumerate(previous) if i not in used and not is_result(message)],
+        [i for i, message in enumerate(current) if i not in pairs and not is_result(message)],
+        [canonical_key(message, previous_keys[i]) for i, message in enumerate(previous)],
+        [canonical_key(message, current_keys[i]) for i, message in enumerate(current)],
+        "canonical_exact",
+    )
+    old_provenance = {}
+    new_provenance = {}
+    for after_index, before_index in pairs.items():
+        old_identity = _message_identity(previous[before_index])
+        new_identity = _message_identity(current[after_index])
+        if old_identity and new_identity and old_identity[0] == new_identity[0] == "stable_call_id":
+            for offset, (old_id, new_id) in enumerate(zip(old_identity[1], new_identity[1], strict=True)):
+                old_provenance[old_id] = (before_index, after_index, offset)
+                new_provenance[new_id] = (before_index, after_index, offset)
+
+    def result_key(message, fingerprint, provenance, side, index):
+        call_id = message.get("tool_call_id")
+        origin = provenance.get(str(call_id)) if call_id is not None else None
+        # Unknown provenance is deliberately not guessed from name/output.
+        return (fingerprint, origin if origin is not None else (side, index))
+
+    old_result_keys = {
+        i: result_key(message, previous_keys[i], old_provenance, "old", i)
+        for i, message in enumerate(previous)
+        if is_result(message)
+    }
+    new_result_keys = {
+        i: result_key(message, current_keys[i], new_provenance, "new", i) for i, message in enumerate(current) if is_result(message)
+    }
+    match_anchored_exact(
+        [i for i in old_result_keys if i not in used],
+        [i for i in new_result_keys if i not in pairs],
+        old_result_keys,
+        new_result_keys,
+        "canonical_exact_provenance",
+    )
+
+    # The sole system/developer message at the same absolute slot is an
+    # explicit instruction-slot identity, not a generic same-role edit guess.
+    for role in ("system", "developer"):
+        old_slots = [i for i, message in enumerate(previous) if isinstance(message, dict) and message.get("role") == role]
+        new_slots = [i for i, message in enumerate(current) if isinstance(message, dict) and message.get("role") == role]
+        if len(old_slots) == len(new_slots) == 1 and old_slots == new_slots:
+            index = old_slots[0]
+            if index not in used and index not in pairs:
+                pairs[index] = index
+                bases[index] = "unique_instruction_slot"
+                used.add(index)
+
+    backbone = _monotonic_backbone(pairs)
+
+    rows = []
+    for after_index, message in enumerate(current):
+        before_index = pairs.get(after_index)
+        status = ["added"]
+        if before_index is not None:
+            changed = previous_keys[before_index] != current_keys[after_index]
+            status = ["modified"] if changed else []
+            if after_index not in backbone:
+                status.append("moved")
+            if not status:
+                status = ["unchanged"]
+        rows.append(
+            {
+                "kind": "message",
+                "id": f"message-{before_index}-{after_index}",
+                "before_index": before_index,
+                "after_index": after_index,
+                "before": previous[before_index] if before_index is not None else None,
+                "after": message,
+                "status": status,
+                "match_basis": bases.get(after_index, "unmatched"),
+            }
+        )
+
+    destinations = {before_index: after_index for after_index, before_index in pairs.items()}
+    gaps: dict[int, list[dict[str, Any]]] = {}
+    next_anchor = len(current)
+    for before_index in reversed(range(len(previous))):
+        after_index = destinations.get(before_index)
+        if after_index in backbone:
+            next_anchor = after_index
+            continue
+        if after_index is None:
+            row = {
+                "kind": "message",
+                "id": f"message-{before_index}-none",
+                "before_index": before_index,
+                "after_index": None,
+                "before": previous[before_index],
+                "after": None,
+                "status": ["removed"],
+                "match_basis": "unmatched",
+            }
+        else:
+            row = {
+                "kind": "move_source",
+                "id": f"source-{before_index}-{after_index}",
+                "target_id": rows[after_index]["id"],
+                "before_index": before_index,
+                "after_index": after_index,
+            }
+        gaps.setdefault(next_anchor, []).append(row)
+    timeline = []
+    for after_index, row in enumerate(rows):
+        timeline.extend(reversed(gaps.get(after_index, [])))
+        timeline.append(row)
+    timeline.extend(reversed(gaps.get(len(current), [])))
+    summary = {
+        key: sum(key in row.get("status", []) for row in timeline) for key in ("unchanged", "modified", "moved", "added", "removed")
+    }
+    return {
+        "timeline": timeline,
+        "summary": summary,
+        "unchanged_count": summary["unchanged"],
+        "unchanged_blocks": [
+            {"before_start": row["before_index"], "after_start": row["after_index"], "count": 1}
+            for row in timeline
+            if row.get("status") == ["unchanged"]
+        ],
+        "moved_messages": [row for row in rows if "moved" in row["status"]],
+        "edited_messages": [row for row in timeline if "modified" in row.get("status", [])],
+        "removed_messages": [
+            {"index": row["before_index"], "message": row["before"]} for row in timeline if "removed" in row.get("status", [])
+        ],
+        "added_messages": [
+            {"index": row["after_index"], "message": row["after"]} for row in timeline if "added" in row.get("status", [])
+        ],
+    }
+
+
 @router.get("/dumps/{name}/diff")
 def get_diff(name: str):
     current_path = _dump_path(name)
@@ -795,17 +1225,16 @@ def get_diff(name: str):
         previous = _load(previous_path.name)
         previous_body = (previous.get("request") or {}).get("body") or {}
         previous_messages = _normalized_messages(previous_body)
-    common = 0
-    for before, after in zip(previous_messages, current_messages, strict=False):
-        if before != after:
-            break
-        common += 1
-    return {
-        "previous_file": previous_path.name if previous_path else None,
-        "previous_sequence": current_index if current_index is not None and current_index > 0 else None,
-        "common_messages": common,
-        "removed_messages": _redact(previous_messages[common:]),
-        "added_messages": _redact(current_messages[common:]),
-        "previous_count": len(previous_messages),
-        "current_count": len(current_messages),
-    }
+    # Match raw payloads first: credential-only changes must not disappear.
+    # Redact the entire response, including every compatibility view and row.
+    diff = _aligned_message_diff(previous_messages, current_messages)
+    return _redact(
+        {
+            "schema_version": 2,
+            "previous_file": previous_path.name if previous_path else None,
+            "previous_sequence": current_index if current_index is not None and current_index > 0 else None,
+            "previous_count": len(previous_messages),
+            "current_count": len(current_messages),
+            **diff,
+        }
+    )

@@ -350,13 +350,19 @@
   box-sizing: border-box;
 }
 .rdv-message,
+.rdv-diff-row,
+.rdv-diff-group,
+.rdv-diff-source,
 .rdv-json,
 .rdv-diff-meta {
   border: 1px solid var(--rdv-border);
   border-radius: 8px;
   background: var(--rdv-card);
 }
-.rdv-message {
+.rdv-message,
+.rdv-diff-row,
+.rdv-diff-group,
+.rdv-diff-source {
   margin: 0 auto 12px;
   max-width: 1100px;
   overflow: hidden;
@@ -1236,5 +1242,80 @@
   }
   .rdv-prompt-section > summary > code {
     display: none;
+  }
+}
+
+/* One aligned message timeline; status is text, not another color system. */
+.rdv-diff-timeline {
+  min-width: 0;
+}
+.rdv-diff-source {
+  padding: 7px 11px;
+}
+.rdv-diff-row > summary,
+.rdv-diff-group > summary {
+  padding: 7px 11px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+.rdv-diff-row > summary::-webkit-details-marker,
+.rdv-diff-group > summary::-webkit-details-marker {
+  display: none;
+}
+.rdv-diff-row > summary::before,
+.rdv-diff-group > summary::before {
+  content: "▸";
+  color: var(--ui-text-secondary, #888);
+}
+.rdv-diff-row[open] > summary::before,
+.rdv-diff-group[open] > summary::before {
+  content: "▾";
+}
+.rdv-diff-position {
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-secondary, #888);
+}
+.rdv-diff-status {
+  font-size: inherit;
+}
+.rdv-diff-preview {
+  flex: 1 1 18rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rdv-diff-group > summary,
+.rdv-diff-source {
+  color: var(--ui-text-secondary, #888);
+  cursor: pointer;
+}
+.rdv-diff-group > .rdv-diff-row {
+  margin-left: 11px;
+  margin-right: 11px;
+}
+.rdv-diff-content {
+  margin: 0.75rem 11px 12px;
+  min-width: 0;
+}
+.rdv-diff-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.rdv-diff-pair section {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rdv-diff-pair h4 {
+  margin: 0 0 0.5rem;
+}
+@media (max-width: 1000px) {
+  .rdv-diff-pair {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
