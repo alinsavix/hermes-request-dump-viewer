@@ -1,25 +1,24 @@
 # Hermes Request Dump Viewer
 
-A Hermes Agent plugin for inspecting captured LLM request dumps in the Hermes web dashboard.
+A Hermes Agent plugin for inspecting captured LLM request dumps in the Hermes web dashboard. If you want to see the *exact* back-and-forth between your clanker and your LLM provider, including the system prompt and tool calls, this is the tool for you!
 
-It adds:
-
-- A **Request Dumps** dashboard tab
-- Redacted request inspection for Chat Completions and Responses-style requests
-- Prompt composition, tool-flow, timeline, diff, and session-outcome views
-- Explicitly confirmed raw JSON downloads
-- A live opt-in preflight-capture toggle
-- Safe dump deletion with filename, path, symlink, and size checks
+Features, all available in the **Request Dumps** dashboard tab:
+- Adds a real-time toggle for capturing LLM requests (equivalent to setting HERMES_DUMP_REQUESTS=true)
+- And a button for deleting all `request_dump_*.json` files in Hermes' sessions directory
+- See a quick overview of your sessions, showing character counts and estimated token usage, and the top sources of token use
+- Study every bit of your session, message-by-message, including system prompt, user messages, LLM responses, tool calls and results, etc.
+- Break down your system prompt, section-by-section, so that you can figure out that you have *waaaaay* too many skills enabled
+- Show the schema of the various enabled tools
+- See diffs between requests, so you can see if something is screwing up your prefix caching
+- Supports both Chat Completion and Responses-style requests
+- Download the raw JSON if the web UI just isn't detailed enough
 
 ## Requirements
 
 - Hermes Agent with the general plugin system and web-dashboard plugin system
 - A current Hermes release providing the `pre_api_request` hook and
   `HERMES_DUMP_REQUESTS` request-capture path
-- A Hermes dashboard (`hermes dashboard`)
-- Python 3.11+
-
-Older Hermes releases may not provide the hook or dashboard APIs used here.
+- Python 3.11–3.13
 
 ## Installation
 
@@ -29,20 +28,16 @@ Install the published plugin directly from GitHub:
 hermes plugins install alinsavix/hermes-request-dump-viewer --enable
 ```
 
-For a reproducible installation, pin an exact 40-character commit SHA:
+For a reproducible installation, pin an exact 40-character commit SHA.
+Replace `<FULL_COMMIT_SHA>` below with a commit SHA from this repository:
 
 ```bash
 hermes plugins install alinsavix/hermes-request-dump-viewer \
-  --ref 0123456789abcdef0123456789abcdef01234567 \
+  --ref "<FULL_COMMIT_SHA>" \
   --enable
 ```
 
-Restart the Hermes gateway and dashboard after installation. If the dashboard
-is already running, force a plugin rescan:
-
-```bash
-curl http://127.0.0.1:9119/api/dashboard/plugins/rescan
-```
+Restart the Hermes gateway and dashboard after installation.
 
 The plugin is opt-in. Verify that it is enabled:
 
@@ -63,12 +58,40 @@ private prompts, authorization headers, cookies, tokens, URLs, tool arguments,
 or other sensitive data.** Only use raw download and deletion controls when
 you understand the local dashboard's access boundary.
 
+## Limits
+
+Token counts are estimates, redaction is best-effort, and individual dumps
+larger than 32 MiB cannot be opened in the viewer.
+
 ## Screenshots
 
-Screenshots will be added once representative request dumps are available in
-the public release environment. They should show the redacted default view,
-the tool-flow and schema tabs, and the prompt-composition view without
-exposing private prompts, credentials, tokens, or tool arguments.
+The viewer provides several ways to inspect a captured request without losing
+the structure of the original conversation. Images are capped for readability
+in the repository view; open one in a new tab to see the full-resolution image.
+
+### Overview
+
+<img src="assets/screenshots/01-overview.jpeg" alt="Request overview with composition and token estimates" width="800">
+
+### Messages
+
+<img src="assets/screenshots/02-messages.jpeg" alt="Messages view" width="800">
+
+<img src="assets/screenshots/02-messages-detail.png" alt="Expanded message and tool result contents" width="800">
+
+### Prompt map
+
+<img src="assets/screenshots/05-prompt-map.jpeg" alt="Prompt map" width="800">
+
+<img src="assets/screenshots/06-prompt-detail.jpeg" alt="Prompt detail" width="800">
+
+### Schemas
+
+<img src="assets/screenshots/04-schemas.jpeg" alt="Schema inspection" width="800">
+
+### Request diffs
+
+<img src="assets/screenshots/07-diff.png" alt="Request diff" width="800">
 
 ## Security notes
 
