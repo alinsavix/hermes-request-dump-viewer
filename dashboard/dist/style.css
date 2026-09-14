@@ -794,6 +794,7 @@
   color: var(--rdv-muted-fg);
 }
 .rdv-composition-card > code {
+  background: transparent;
   margin-top: 9px;
   overflow: hidden;
   text-overflow: ellipsis;

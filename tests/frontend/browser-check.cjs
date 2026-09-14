@@ -72,7 +72,17 @@ const detail = {
     },
   ],
   tools: [],
-  analysis: {},
+  analysis: {
+    composition: {
+      total_characters: 300,
+      estimated_tokens: 75,
+      parts: [
+        { key: "instructions", label: "Instructions/system", characters: 100, estimated_tokens: 25, message_indices: [0] },
+        { key: "history", label: "Conversation history", characters: 100, estimated_tokens: 25, message_indices: [1] },
+        { key: "current_user", label: "Current user input", characters: 100, estimated_tokens: 25, message_indices: [2] },
+      ],
+    },
+  },
   request: { body_options: {} },
 };
 const diff = {
@@ -108,6 +118,7 @@ const diff = {
     const errors = [],
       requests = [];
     let listFailures = 2;
+    let outcome = { found: false };
     page.on("pageerror", (error) => errors.push(error.message));
     await page.addInitScript(() => {
       window.copied = [];
@@ -130,7 +141,7 @@ const diff = {
         return route.fulfill({
           contentType: "text/html",
           body:
-            "<!doctype html><html><head><style>body{margin:0;font:14px system-ui}" +
+            "<!doctype html><html><head><style>body{margin:0;font:14px system-ui}code{background:#ffe6cb}" +
             style +
             '</style></head><body><div id="root"></div><script src="/react.js"></script><script src="/plugin.js"></script></body></html>',
         });
@@ -149,7 +160,7 @@ const diff = {
           return route.fulfill({ status: 503, body: "synthetic list failure" });
         } else data = { items: [meta], dump_count: 2 };
       else if (url.pathname.endsWith("/timeline")) data = { items: [meta] };
-      else if (url.pathname.endsWith("/outcome")) data = { found: false };
+      else if (url.pathname.endsWith("/outcome")) data = outcome;
       else if (url.pathname.endsWith("/diff")) data = diff;
       else if (url.pathname.endsWith(".json")) data = detail;
       else return route.abort();
@@ -266,10 +277,43 @@ const diff = {
     assert.ok(
       (await page.locator(".rdv-diff-content").innerText()).includes(envelope),
     );
+    detail.messages = ["one", "two", "three"].map(word => ({ role: "user", content: "matchtarget " + word }));
+    outcome = { found: true, content: "matchtarget final-outcome", source: "test" };
+    await page.getByRole("button", { name: "Refresh", exact: true }).click();
+    await page.getByRole("tab", { name: /^Messages/ }).click();
+    await page.locator("#message-outcome").waitFor();
+    await page.evaluate(() => {
+      window.searchScrolls = [];
+      const scroll = HTMLElement.prototype.scrollIntoView;
+      HTMLElement.prototype.scrollIntoView = function (...args) {
+        window.searchScrolls.push(this.id);
+        return scroll.apply(this, args);
+      };
+    });
+    const search = page.locator(".rdv-message-search input");
+    await search.fill("matchtarget");
+    assert.equal(await page.locator(".rdv-search-count").textContent(), "4 matches");
+    await search.press("Shift+Enter");
+    assert.equal(await page.evaluate(() => window.searchScrolls.at(-1)), "message-outcome");
+    await search.press("Shift+Enter");
+    assert.equal(await page.evaluate(() => window.searchScrolls.at(-1)), "message-3");
+    await search.fill("final-outcome");
+    assert.equal(await page.locator(".rdv-search-count").textContent(), "1 match");
+    await search.press("Enter");
+    assert.equal(await page.evaluate(() => window.searchScrolls.at(-1)), "message-outcome");
+    assert.equal(await page.locator("#message-outcome").evaluate(n => n.open), true);
+    await page.getByRole("tab", { name: "Overview", exact: true }).click();
+    const cardNotes = page.locator(".rdv-composition-card > code");
+    assert.equal(await cardNotes.count(), 3);
+    assert.deepEqual(
+      await cardNotes.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundColor)),
+      ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)"],
+      "Overview message references must not inherit the host's inverted code background",
+    );
     assert.deepEqual(errors, [], "no uncaught Chrome errors");
     assert.ok(requests.every((request) => request.method === "GET"));
     console.log(
-      "Chrome PASS: R02 literal strings/paths, raw unsafe numbers and exact argument copy; R03 initial/repeated list failures and recovery preserve shell/detail; F01 nested JSON, F08 diagnostic text, F09 downloaded paths, F17 native keyboard focus; no page errors or API writes.",
+      "Chrome PASS: R02 literal strings/paths, raw unsafe numbers and exact argument copy; R03 initial/repeated list failures and recovery preserve shell/detail; F01 nested JSON, F08 diagnostic text, F09 downloaded paths, F17 native keyboard focus; search counts/reverse navigation include outcomes; Overview card notes have transparent backgrounds; no page errors or API writes.",
     );
     await context.close();
   } finally {

@@ -705,7 +705,7 @@
     const preview = text(value.content).replace(/\s+/g, " ").trim();
     return h(
       "details",
-      { className: "rdv-message rdv-outcome-message" },
+      { className: "rdv-message rdv-outcome-message", id: "message-outcome" },
       h(
         "summary",
         { className: "rdv-message-summary" },
@@ -1819,6 +1819,10 @@
       outcome.found &&
       (!needle || text(outcome.content).toLowerCase().indexOf(needle) >= 0),
     );
+    const matchTargets = visible.map(function (x) {
+      return "message-" + (x.index + 1);
+    });
+    if (outcomeMatches) matchTargets.push("message-outcome");
     const rankedTools = detail.tools
       .map(function (tool, i) {
         return {
@@ -1962,15 +1966,17 @@
               setMatchCursor(-1);
             },
             onKeyDown: function (e) {
-              if (e.key !== "Enter" || !visible.length) return;
+              if (e.key !== "Enter" || !matchTargets.length) return;
               e.preventDefault();
               const next =
-                (matchCursor + (e.shiftKey ? visible.length - 1 : 1)) %
-                visible.length;
+                matchCursor < 0 || matchCursor >= matchTargets.length
+                  ? e.shiftKey
+                    ? matchTargets.length - 1
+                    : 0
+                  : (matchCursor + (e.shiftKey ? matchTargets.length - 1 : 1)) %
+                    matchTargets.length;
               setMatchCursor(next);
-              const node = document.getElementById(
-                "message-" + (visible[next].index + 1),
-              );
+              const node = document.getElementById(matchTargets[next]);
               if (node) {
                 node.open = true;
                 node.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -1983,7 +1989,9 @@
             h(
               "span",
               { className: "rdv-search-count" },
-              visible.length + " match" + (visible.length === 1 ? "" : "es"),
+              matchTargets.length +
+                " match" +
+                (matchTargets.length === 1 ? "" : "es"),
             ),
         ),
       h(
