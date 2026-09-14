@@ -618,10 +618,9 @@ test("F08 diagnostic envelopes survive nested JSON rendering and argument copyin
     body.textContent.includes(source),
     "preserve the complete error envelope",
   );
-  assert.match(
-    body.textContent,
-    /Parsedtrue/,
-    "complete JSON is still structured",
+  assert.ok(
+    body.textContent.includes('{"parsed":true}'),
+    "a complete JSON-looking nested string remains literal text",
   );
   await app.click("Copy arguments");
   assert.equal(app.copied.at(-1), source);

@@ -81,23 +81,27 @@
   function parsed(value) {
     if (typeof value !== "string") return value;
     try {
-      return JSON.parse(value);
+      const decoded = JSON.parse(value, function (_, child) {
+        if (
+          typeof child === "number" &&
+          (!Number.isFinite(child) ||
+            (Number.isInteger(child) && !Number.isSafeInteger(child)))
+        )
+          throw new Error("Unsafe JSON number");
+        return child;
+      });
+      // Ignore only whitespace outside JSON strings. If a parse/stringify
+      // roundtrip changes anything else (precision, numeric spelling, duplicate
+      // keys, escape spelling or key order), conservatively keep the raw text.
+      const compact = value.replace(/"(?:\\.|[^"\\])*"|\s+/g, function (part) {
+        return part[0] === '"' ? part : "";
+      });
+      return JSON.stringify(decoded) === compact ? decoded : value;
     } catch (_) {
       // Only complete JSON is structured; prefixes and suffixes may contain
       // diagnostic errors or exit status and must never be discarded.
       return value;
     }
-  }
-
-  function expandedText(value) {
-    if (typeof value !== "string") return value;
-    // Some nested payloads are JSON-encoded more than once. Parse the outer
-    // container first, then turn literal escaped newlines in leaf text into
-    // the lines a human expects to read.
-    return value
-      .replace(/\\r\\n/g, "\n")
-      .replace(/\\n/g, "\n")
-      .replace(/\\t/g, "\t");
   }
 
   function isScalar(value) {
@@ -223,7 +227,7 @@
       return h("span", { className: "rdv-bool" }, raw ? "true" : "false");
     if (typeof raw === "number")
       return h("span", { className: "rdv-number" }, String(raw));
-    const value = expandedText(String(raw));
+    const value = String(raw);
     const long = value.length > 2400;
     const shown =
       long && !open
@@ -253,8 +257,7 @@
   }
 
   function DataTree(props) {
-    let value = props.value;
-    if (typeof value === "string") value = parsed(value);
+    const value = props.value;
     if (isScalar(value)) return h(Scalar, { value: value });
 
     if (Array.isArray(value)) {
@@ -324,8 +327,8 @@
     const structured =
       typeof raw === "object" ||
       (typeof raw === "string" && /^[\s]*[\[{]/.test(raw));
-    if (structured) return h(DataTree, { value: raw });
-    const value = expandedText(text(raw));
+    if (structured) return h(DataTree, { value: parsed(raw) });
+    const value = text(raw);
     const long = value.length > 2200;
     const shown =
       long && !expanded
@@ -520,7 +523,7 @@
           {
             disabled: argumentPath == null,
             onClick: function () {
-              copyText(parsed(argumentsValue));
+              copyText(argumentsValue);
             },
           },
           "Copy arguments",
@@ -1151,7 +1154,7 @@
             h(
               "div",
               { className: "rdv-flow-data" },
-              h(DataTree, { value: flow.arguments }),
+              h(DataTree, { value: parsed(flow.arguments) }),
             ),
           ),
           h(
@@ -1388,6 +1391,33 @@
     return Number.isInteger(index) ? "#" + (index + 1) : "—";
   }
 
+  function parsedField(value, key) {
+    return value &&
+      typeof value === "object" &&
+      Object.prototype.hasOwnProperty.call(value, key)
+      ? Object.assign({}, value, { [key]: parsed(value[key]) })
+      : value;
+  }
+
+  function MessageTree(props) {
+    // Decode only known message/argument boundaries, never arbitrary leaves.
+    const message = parsedField(props.value, "content");
+    const value =
+      message && Array.isArray(message.tool_calls)
+        ? Object.assign({}, message, {
+            tool_calls: message.tool_calls.map(function (call) {
+              const value = parsedField(call, "arguments");
+              return value && value.function
+                ? Object.assign({}, value, {
+                    function: parsedField(value.function, "arguments"),
+                  })
+                : value;
+            }),
+          })
+        : message;
+    return h(DataTree, { value: value });
+  }
+
   function DiffMessage(props) {
     const row = props.row;
     const expanded = useDiffExpansion(false);
@@ -1434,16 +1464,16 @@
                   "section",
                   null,
                   h("h4", null, "Before " + diffPosition(row.before_index)),
-                  h(DataTree, { value: row.before }),
+                  h(MessageTree, { value: row.before }),
                 ),
                 h(
                   "section",
                   null,
                   h("h4", null, "After " + diffPosition(row.after_index)),
-                  h(DataTree, { value: row.after }),
+                  h(MessageTree, { value: row.after }),
                 ),
               )
-            : h(DataTree, { value: message }),
+            : h(MessageTree, { value: message }),
         ),
     );
   }
@@ -2140,11 +2170,15 @@
       deleteError = deleteErrorState[0],
       setDeleteError = deleteErrorState[1];
 
+    const listRequest = React.useRef(0);
+
     function load() {
+      const request = ++listRequest.current;
       setBusy(true);
       setError(null);
       api("/dumps")
         .then(function (data) {
+          if (request !== listRequest.current) return;
           const next = data.items || [];
           setItems(next);
           setDumpCount(data.dump_count || next.length);
@@ -2156,9 +2190,11 @@
             return value + 1;
           });
         })
-        .catch(setError)
+        .catch(function (error) {
+          if (request === listRequest.current) setError(error);
+        })
         .finally(function () {
-          setBusy(false);
+          if (request === listRequest.current) setBusy(false);
         });
     }
     function loadCapture() {
@@ -2185,6 +2221,9 @@
     useEffect(function () {
       load();
       loadCapture();
+      return function () {
+        listRequest.current += 1;
+      };
     }, []);
 
     function selectDump(file, sessionId) {
@@ -2293,12 +2332,6 @@
       [items, search],
     );
 
-    if (error)
-      return h(
-        "div",
-        { className: "rdv-empty rdv-error" },
-        "Could not scan request dumps: " + (error.message || error),
-      );
     return h(
       "div",
       {
@@ -2414,10 +2447,18 @@
           ),
         ),
       ),
+      error &&
+        h(
+          "div",
+          { className: "rdv-list-error rdv-error", role: "alert" },
+          "Could not scan request dumps: " + (error.message || error),
+          h("button", { onClick: load, disabled: busy }, "Retry"),
+        ),
       !items.length && busy
         ? h("div", { className: "rdv-empty" }, "Scanning request dumps…")
         : !items.length
-          ? h("div", { className: "rdv-empty" }, "No request dumps found.")
+          ? !error &&
+            h("div", { className: "rdv-empty" }, "No request dumps found.")
           : h(
               "div",
               { className: "rdv-workspace" },

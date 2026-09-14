@@ -630,33 +630,107 @@ def _dump_sort_key(data: dict[str, Any], path: Path) -> tuple[float, str]:
     return sort_time, path.name
 
 
+_NATIVE_DUMP_RE = re.compile(r"^request_dump_(?P<component>[A-Za-z0-9_-]+)_(?P<stamp>[0-9]{8}_[0-9]{6}_[0-9]{6})\.json$")
+
+
+def _session_filename_component(session_id: str) -> str:
+    try:
+        from agent.session_persistence import _safe_session_filename_component
+    except ImportError:
+        # Standalone plugin tests/installations do not require the agent's
+        # runtime dependency tree. Keep this fallback identical to the writer.
+        import hashlib
+
+        raw = str(session_id or "").strip()
+        sanitized = re.sub(r"[^\w-]", "_", raw).strip("._")[:96] or "session"
+        if raw and sanitized == raw:
+            return sanitized
+        return f"{sanitized}_{hashlib.sha256(raw.encode('utf-8', errors='surrogatepass')).hexdigest()[:12]}"
+    return _safe_session_filename_component(session_id)
+
+
+def _filename_identity(path: Path) -> tuple[str, float] | None:
+    # Anchor the timestamp at the RIGHT: native session IDs contain underscores.
+    match = _NATIVE_DUMP_RE.fullmatch(path.name)
+    if match is None:
+        return None
+    try:
+        timestamp = datetime.strptime(match["stamp"], "%Y%m%d_%H%M%S_%f").timestamp()
+    except ValueError:
+        return None
+    return match["component"], timestamp
+
+
+def _eligible_dump_paths(root: Path) -> list[Path]:
+    paths = []
+    for path in root.glob("request_dump_*.json"):
+        if not _FILE_RE.fullmatch(path.name):
+            continue
+        try:
+            info = path.lstat()
+        except OSError:
+            continue
+        if stat.S_ISREG(info.st_mode) and info.st_size <= _MAX_FILE_BYTES:
+            paths.append(path)
+    return paths
+
+
 @router.get("/dumps")
 def list_dumps(limit: int = Query(200, ge=1, le=1000)):
     root = _root()
     if not root.exists():
         return {"items": [], "count": 0, "total_bytes": 0, "dump_count": 0}
-    paths = sorted(
-        (p for p in root.glob("request_dump_*.json") if not p.is_symlink() and p.is_file() and p.stat().st_size <= _MAX_FILE_BYTES),
-        key=lambda p: p.stat().st_mtime,
+    paths = _eligible_dump_paths(root)
+
+    groups: dict[str, list[Path]] = {}
+    summaries: list[tuple[Path, dict[str, Any], int]] = []
+    for path in paths:
+        identity = _filename_identity(path)
+        if identity is None:
+            summaries.append((path, _summary(path, include_preview=True), 1))
+        else:
+            groups.setdefault(identity[0], []).append(path)
+    # Validate one representative per group even beyond the response limit:
+    # legacy/misfiled JSON can share a session and affect its returned count.
+    for component, group in groups.items():
+        group.sort(key=lambda path: path.name, reverse=True)
+        failures = []
+        for index, path in enumerate(group):
+            summary = _summary(path, include_preview=True)
+            if "parse_error" in summary:
+                failures.append((path, summary, 1))
+                continue
+            session_id = summary.get("session_id")
+            if not isinstance(session_id, str) or _session_filename_component(session_id) != component:
+                # A renamed/misfiled representative invalidates the filename
+                # assumption for this group. Parse it conservatively by JSON;
+                # never attribute all its files to the mismatching session.
+                summaries.extend(failures)
+                summaries.append((path, summary, 1))
+                summaries.extend((older, _summary(older, include_preview=True), 1) for older in group[index + 1 :])
+                break
+            # Recognized cumulative snapshots use eligible FILE count, not
+            # parsed history count (including corrupt files). Old files are
+            # deliberately not read or validated.
+            summaries.append((path, summary, len(group)))
+            break
+        else:
+            # With no usable representative retain the existing error rows.
+            summaries.extend(failures)
+    summaries.sort(
+        key=lambda entry: ((_filename_identity(entry[0]) or (None, entry[0].stat().st_mtime))[1], entry[0].name),
         reverse=True,
     )
-
-    # Dumps are cumulative request snapshots. Keep only the newest file for
-    # each session in the browser list, while retaining every file on disk for
-    # the per-request diff view. Because paths are newest-first, the first
-    # occurrence of a session id wins. Malformed dumps get their own filename
-    # key so one bad file cannot hide another.
-    summaries = [(path, _summary(path, include_preview=True)) for path in paths]
     request_counts: dict[str, int] = {}
-    for _, summary in summaries:
+    for _, summary, file_count in summaries:
         session_id = summary.get("session_id")
         if session_id is not None and "parse_error" not in summary:
             key = str(session_id)
-            request_counts[key] = request_counts.get(key, 0) + 1
+            request_counts[key] = request_counts.get(key, 0) + file_count
 
     items: list[dict[str, Any]] = []
     seen_sessions: set[str] = set()
-    for path, item in summaries:
+    for path, item, _ in summaries:
         key = str(item.get("session_id") or f"file:{path.name}")
         if key in seen_sessions:
             continue
@@ -680,21 +754,17 @@ def get_session_timeline(session_id: str):
     if not _SESSION_RE.fullmatch(session_id):
         raise HTTPException(status_code=400, detail="Invalid session id")
     root = _root()
-    candidates = (
-        sorted(
-            (
-                path
-                for path in root.glob("request_dump_*.json")
-                if path.is_file() and not path.is_symlink() and _FILE_RE.fullmatch(path.name)
-            ),
-            key=lambda path: path.stat().st_mtime,
-        )
-        if root.exists()
-        else []
-    )
+    candidates = _eligible_dump_paths(root)
 
     timeline: list[dict[str, Any]] = []
+    component = _session_filename_component(session_id)
+    # Filename filtering is only an index hint; every loaded JSON must still
+    # match the requested session below. Misfiled JSON in another recognized
+    # component cannot be discovered without scanning that unrelated history.
     for path in candidates:
+        identity = _filename_identity(path)
+        if identity is not None and identity[0] != component:
+            continue
         try:
             data = _load(path.name)
         except HTTPException:

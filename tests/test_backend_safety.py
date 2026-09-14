@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from test_capture_toggle import plugin
 from test_request_analysis import _write_dump, api
 
-SECRET = "SYNTHETIC-REVIEW-SENTINEL"
+REDACTION_SENTINEL = "SYNTHETIC-REVIEW-SENTINEL"
 
 
 def http(path, method="GET", body=None):
@@ -66,15 +66,17 @@ def dump(home, **updates):
     return path
 
 
-@pytest.mark.parametrize("content", [json.dumps({"password": SECRET, "padding": "x" * 300}), {"password": SECRET}])
+@pytest.mark.parametrize(
+    "content", [json.dumps({"password": REDACTION_SENTINEL, "padding": "x" * 300}), {"password": REDACTION_SENTINEL}]
+)
 def test_f02_preview_redacts_before_truncating(home, content):
     path = dump(home, request={"body": {"messages": [{"role": "user", "content": content}]}})
     listing = api.list_dumps(limit=200)
     preview = listing["items"][0]["preview"]
-    assert SECRET not in preview
+    assert REDACTION_SENTINEL not in preview
     assert api._REDACTED in preview
     assert len(preview) <= 240
-    assert SECRET in json.dumps(api.get_raw_dump(path.name))
+    assert REDACTION_SENTINEL in json.dumps(api.get_raw_dump(path.name))
 
 
 def test_f02_outcome_redacts_structured_content(home):
@@ -84,9 +86,9 @@ def test_f02_outcome_redacts_structured_content(home):
             "CREATE TABLE messages(id INTEGER, session_id TEXT, role TEXT, active INTEGER, content TEXT, timestamp REAL);"
         )
         db.execute("INSERT INTO sessions VALUES ('safe', 'test', 1)")
-        db.execute("INSERT INTO messages VALUES (1, 'safe', 'assistant', 1, ?, 1)", (json.dumps({"password": SECRET}),))
+        db.execute("INSERT INTO messages VALUES (1, 'safe', 'assistant', 1, ?, 1)", (json.dumps({"password": REDACTION_SENTINEL}),))
     result = api.get_session_outcome("safe")
-    assert SECRET not in json.dumps(result)
+    assert REDACTION_SENTINEL not in json.dumps(result)
     assert json.loads(result["content"])["password"] == api._REDACTED
 
 
@@ -94,43 +96,48 @@ def test_f02_outcome_redacts_structured_content(home):
 def test_f02_default_metadata_redacted(home, endpoint):
     path = dump(
         home,
-        reason={"password": SECRET},
-        request={"method": json.dumps({"password": SECRET}), "body": {"model": {"token": SECRET}}},
+        reason={"password": REDACTION_SENTINEL},
+        request={"method": json.dumps({"password": REDACTION_SENTINEL}), "body": {"model": {"token": REDACTION_SENTINEL}}},
     )
     result = {
         "list": lambda: api.list_dumps(limit=200),
         "detail": lambda: api.get_dump(path.name),
         "timeline": lambda: api.get_session_timeline("safe"),
     }[endpoint]()
-    assert SECRET not in json.dumps(result)
+    assert REDACTION_SENTINEL not in json.dumps(result)
 
 
 @pytest.mark.parametrize(
     "url",
     [
-        f"https://user:{SECRET}@example.test/path",
-        f"https://{SECRET}@example.test/path",
-        f"https://example.test/path?key={SECRET}&view=full",
-        f"https://example.test/path?%6bey={SECRET}&KEY={SECRET}",
-        f"//user:{SECRET}@example.test/path?key={SECRET}",
+        f"https://user:{REDACTION_SENTINEL}@example.test/path",
+        f"https://{REDACTION_SENTINEL}@example.test/path",
+        f"https://example.test/path?key={REDACTION_SENTINEL}&view=full",
+        f"https://example.test/path?%6bey={REDACTION_SENTINEL}&KEY={REDACTION_SENTINEL}",
+        f"//user:{REDACTION_SENTINEL}@example.test/path?key={REDACTION_SENTINEL}",
     ],
 )
 def test_f03_url_credentials_redacted_without_masking_json_key(home, url):
     path = dump(home, request={"url": url, "body": {"key": "ordinary-property"}})
     for result in (api.list_dumps(limit=200), api.get_dump(path.name)):
-        assert SECRET not in json.dumps(result)
+        assert REDACTION_SENTINEL not in json.dumps(result)
     assert api.get_dump(path.name)["request"]["body_options"]["key"] == "ordinary-property"
     assert api.get_raw_dump(path.name)["request"]["url"] == url
 
 
 @pytest.mark.parametrize(
-    "url", [f"https://[invalid?key={SECRET}", f"https://user:{SECRET}@[invalid?x=1", f"HTTPS://example.test/?key={SECRET}"]
+    "url",
+    [
+        f"https://[invalid?key={REDACTION_SENTINEL}",
+        f"https://user:{REDACTION_SENTINEL}@[invalid?x=1",
+        f"HTTPS://example.test/?key={REDACTION_SENTINEL}",
+    ],
 )
 def test_f03_f16_url_text_preserves_envelope_not_secrets(home, url):
     content = "ERROR before " + url + " after failure"
     path = dump(home, request={"url": url, "body": {"messages": [{"role": "user", "content": content}]}})
     detail = api.get_dump(path.name)
-    assert SECRET not in json.dumps(detail)
+    assert REDACTION_SENTINEL not in json.dumps(detail)
     assert detail["messages"][0]["content"].startswith("ERROR before ")
     assert detail["messages"][0]["content"].endswith(" after failure")
     assert api._redact("Why? [not a URL]") == "Why? [not a URL]"
@@ -373,12 +380,12 @@ def test_f02_outcome_metadata_also_uses_default_redaction(home, has_message):
             "CREATE TABLE sessions(id TEXT, source TEXT, ended_at REAL); "
             "CREATE TABLE messages(id INTEGER, session_id TEXT, role TEXT, active INTEGER, content TEXT, timestamp REAL);"
         )
-        db.execute("INSERT INTO sessions VALUES ('safe', ?, 1)", (json.dumps({"password": SECRET}),))
+        db.execute("INSERT INTO sessions VALUES ('safe', ?, 1)", (json.dumps({"password": REDACTION_SENTINEL}),))
         if has_message:
             db.execute("INSERT INTO messages VALUES (1, 'safe', 'assistant', 1, 'ok', 1)")
     status, result = http("/sessions/safe/outcome")
     assert status == 200
-    assert SECRET not in json.dumps(result)
+    assert REDACTION_SENTINEL not in json.dumps(result)
 
 
 def test_f06_raw_endpoint_retains_path_size_and_symlink_guards(home, monkeypatch):
@@ -404,11 +411,11 @@ def test_f16_malformed_previous_request_is_empty_for_diff(home):
     assert diff["current_count"] == 1
 
 
-@pytest.mark.parametrize("url", [f"/v1?api_key={SECRET}&view=full", f"?key={SECRET}&view=full"])
+@pytest.mark.parametrize("url", [f"/v1?api_key={REDACTION_SENTINEL}&view=full", f"?key={REDACTION_SENTINEL}&view=full"])
 def test_f03_relative_provider_urls_still_redact_query_credentials(home, url):
     path = dump(home, request={"url": url, "body": {}})
     detail = api.get_dump(path.name)
-    assert SECRET not in json.dumps(detail)
+    assert REDACTION_SENTINEL not in json.dumps(detail)
     assert "view=full" in detail["request"]["url"]
 
 

@@ -41,11 +41,16 @@ const meta = {
   sequence: 2,
 };
 const envelope = 'ERROR: job failed\n{"ok":true}\nprocess exited 1';
+const literalPath = String.raw`C:\new\test`;
+const rawArguments = ' {"id":9007199254740993}\n';
 const message = {
   role: "tool",
   name: "synthetic",
   content: {
     output: envelope,
+    path: literalPath,
+    id: "9007199254740993",
+    literal: '{"nested":true}',
     items: [
       {
         name: { first: "Synthetic" },
@@ -56,7 +61,16 @@ const message = {
 };
 const detail = {
   meta,
-  messages: [message],
+  messages: [
+    message,
+    { role: "tool", name: "synthetic", content: rawArguments },
+    {
+      role: "assistant",
+      tool_calls: [
+        { id: "call", function: { name: "lookup", arguments: rawArguments } },
+      ],
+    },
+  ],
   tools: [],
   analysis: {},
   request: { body_options: {} },
@@ -93,6 +107,7 @@ const diff = {
     const page = await context.newPage();
     const errors = [],
       requests = [];
+    let listFailures = 2;
     page.on("pageerror", (error) => errors.push(error.message));
     await page.addInitScript(() => {
       window.copied = [];
@@ -129,7 +144,10 @@ const diff = {
       let data;
       if (url.pathname.endsWith("/capture")) data = { enabled: false };
       else if (url.pathname.endsWith("/dumps"))
-        data = { items: [meta], dump_count: 2 };
+        if (listFailures > 0) {
+          listFailures--;
+          return route.fulfill({ status: 503, body: "synthetic list failure" });
+        } else data = { items: [meta], dump_count: 2 };
       else if (url.pathname.endsWith("/timeline")) data = { items: [meta] };
       else if (url.pathname.endsWith("/outcome")) data = { found: false };
       else if (url.pathname.endsWith("/diff")) data = diff;
@@ -143,13 +161,71 @@ const diff = {
     await page.goto(
       "http://rdv-fixture.test/?dump=request_dump_after.json&tab=messages",
     );
+    for (let i = 0; i < 2; i++) {
+      await page.locator(".rdv-list-error").waitFor();
+      assert.equal(await page.locator(".rdv-page").count(), 1);
+      assert.ok(
+        await page
+          .getByRole("button", { name: "Refresh", exact: true })
+          .isEnabled(),
+      );
+      await page.getByRole("button", { name: "Retry", exact: true }).click();
+    }
     await page.locator(".rdv-detail").waitFor();
     await page.getByRole("button", { name: "Expand all", exact: true }).click();
-    const body = await page.locator(".rdv-message-body").innerText();
+    const body = await page.locator(".rdv-message-body").first().innerText();
     assert.ok(body.includes("Synthetic"), "F01 arbitrary nested labels render");
     assert.ok(body.includes(envelope), "F08 all diagnostic text survives");
+    assert.ok(body.includes(literalPath), "R02 Windows paths remain literal");
+    assert.ok(
+      body.includes("9007199254740993"),
+      "R02 numeric string remains literal",
+    );
+    assert.ok(
+      body.includes('{"nested":true}'),
+      "R02 nested JSON string stays a string",
+    );
+    assert.equal(
+      await page.locator("#message-2 .rdv-scalar-text").textContent(),
+      rawArguments,
+    );
+    if (!(await page.locator(".rdv-tool").evaluate((node) => node.open)))
+      await page.locator(".rdv-tool > summary").click();
+    await page
+      .getByRole("button", { name: "Copy arguments", exact: true })
+      .click();
+    assert.equal(await page.evaluate(() => window.copied.at(-1)), rawArguments);
+    await page.evaluate(() => {
+      window.lastGoodMessage = document.getElementById("message-1");
+    });
+    listFailures = 2;
+    await page.getByRole("button", { name: "Refresh", exact: true }).click();
+    for (let i = 0; i < 2; i++) {
+      await page.locator(".rdv-list-error").waitFor();
+      assert.equal(await page.locator(".rdv-list-item.active").count(), 1);
+      assert.equal(
+        await page.evaluate(
+          () =>
+            document.getElementById("message-1") === window.lastGoodMessage &&
+            window.lastGoodMessage.open,
+        ),
+        true,
+      );
+      await page.getByRole("button", { name: "Retry", exact: true }).click();
+    }
+    await page.locator(".rdv-list-error").waitFor({ state: "detached" });
+    await page.getByRole("button", { name: "Refresh", exact: true }).waitFor();
+    assert.equal(
+      await page.evaluate(
+        () =>
+          document.getElementById("message-1") === window.lastGoodMessage &&
+          window.lastGoodMessage.open,
+      ),
+      true,
+    );
     await page
       .locator(".rdv-message-body")
+      .first()
       .getByRole("button", { name: "Copy JSONPath", exact: true })
       .click();
     const jsonPath = await page.evaluate(() => window.copied.at(-1));
@@ -193,7 +269,7 @@ const diff = {
     assert.deepEqual(errors, [], "no uncaught Chrome errors");
     assert.ok(requests.every((request) => request.method === "GET"));
     console.log(
-      "Chrome PASS: F01 nested JSON, F08 diagnostic text, F09 downloaded paths, F17 native keyboard focus; no page errors or API writes.",
+      "Chrome PASS: R02 literal strings/paths, raw unsafe numbers and exact argument copy; R03 initial/repeated list failures and recovery preserve shell/detail; F01 nested JSON, F08 diagnostic text, F09 downloaded paths, F17 native keyboard focus; no page errors or API writes.",
     );
     await context.close();
   } finally {

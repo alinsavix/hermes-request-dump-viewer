@@ -1,6 +1,6 @@
 name: request-dump-viewer
 version: "0.3.0"
-manifest_version: 2
+manifest_version: 1
 api_version: 1
 description: "Request dump viewer plus live preflight-capture toggle."
 author: "TDV Alinsa"
