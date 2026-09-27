@@ -388,6 +388,86 @@ def _link_tool_results(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return linked
 
 
+def _persisted_session_messages(session_id: str) -> list[dict[str, Any]]:
+    """Read the session's persisted records without blocking or modifying Hermes."""
+    database = Path(get_hermes_home()) / "state.db"
+    if not database.is_file():
+        return []
+    connection: sqlite3.Connection | None = None
+    try:
+        connection = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)
+        connection.row_factory = sqlite3.Row
+        columns = {row["name"] for row in connection.execute("PRAGMA table_info(messages)")}
+        required = {"id", "session_id", "role", "content", "timestamp", "active"}
+        if not required <= columns:
+            return []
+        visibility = "(active = 1 OR compacted = 1)" if "compacted" in columns else "active = 1"
+        order = "COALESCE(display_order, id), id" if "display_order" in columns else "id"
+        optional = {name: name if name in columns else f"NULL AS {name}" for name in ("tool_calls", "tool_name", "tool_call_id")}
+        rows = connection.execute(
+            "SELECT id, role, content, timestamp, "
+            f"{optional['tool_calls']}, {optional['tool_name']}, {optional['tool_call_id']} "
+            f"FROM messages WHERE session_id = ? AND {visibility} ORDER BY {order}",
+            (session_id,),
+        ).fetchall()
+    except sqlite3.Error:
+        return []
+    finally:
+        if connection is not None:
+            connection.close()
+
+    messages = []
+    for row in rows:
+        tool_calls = row["tool_calls"]
+        if isinstance(tool_calls, str):
+            with contextlib.suppress(ValueError, TypeError):
+                tool_calls = json.loads(tool_calls)
+        message = {"role": row["role"], "content": row["content"]}
+        if isinstance(tool_calls, list):
+            message["tool_calls"] = tool_calls
+        if row["tool_name"] is not None:
+            message["name"] = row["tool_name"]
+        if row["tool_call_id"] is not None:
+            message["tool_call_id"] = row["tool_call_id"]
+        messages.append({"id": row["id"], "timestamp": row["timestamp"], "message": message})
+    return messages
+
+
+def _attach_persisted_timestamps(session_id: Any, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Add persisted timestamps to request entries when their session records match."""
+    if not isinstance(session_id, str):
+        return messages
+    persisted = _persisted_session_messages(session_id)
+    if not persisted:
+        return messages
+
+    enriched = [dict(message) for message in messages]
+    cursor = 0
+    for message in enriched:
+        identity = _message_identity(message)
+        fingerprint = _message_fingerprint(message)
+        match_index = next(
+            (
+                index
+                for index in range(cursor, len(persisted))
+                if (
+                    (identity is not None and _message_identity(persisted[index]["message"]) == identity)
+                    or (identity is None and _message_fingerprint(persisted[index]["message"]) == fingerprint)
+                )
+            ),
+            None,
+        )
+        if match_index is None:
+            continue
+        record = persisted[match_index]
+        timestamp = record["timestamp"]
+        if isinstance(timestamp, (int, float)) and math.isfinite(timestamp):
+            message["persisted_at"] = timestamp
+            message["state_message_id"] = record["id"]
+        cursor = match_index + 1
+    return enriched
+
+
 def _compact_text(value: Any) -> str:
     """Return stable text for request-size estimates and UI previews."""
     if isinstance(value, str):
@@ -927,6 +1007,7 @@ def get_dump(name: str):
     request = data.get("request") if isinstance(data.get("request"), dict) else {}
     body = request.get("body") if isinstance(request.get("body"), dict) else {}
     messages = _normalized_messages(body)
+    messages = _attach_persisted_timestamps(data.get("session_id"), messages)
     tools = body.get("tools") if isinstance(body.get("tools"), list) else []
     response = data.get("response")
     return {

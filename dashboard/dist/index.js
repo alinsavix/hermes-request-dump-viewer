@@ -68,6 +68,13 @@
     return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
   }
 
+  function whenUnixSeconds(value) {
+    const seconds = Number(value);
+    return Number.isFinite(seconds)
+      ? new Date(seconds * 1000).toISOString()
+      : "";
+  }
+
   function text(value) {
     if (typeof value === "string") return value;
     if (value == null) return "";
@@ -630,6 +637,12 @@
             calls.length + " tool call" + (calls.length === 1 ? "" : "s"),
           ),
         summary && h("span", { className: "rdv-message-preview" }, summary),
+        message.persisted_at != null &&
+          h(
+            "span",
+            { className: "rdv-index rdv-message-time", title: "Persisted message time" },
+            whenUnixSeconds(message.persisted_at),
+          ),
       ),
       h(
         "div",

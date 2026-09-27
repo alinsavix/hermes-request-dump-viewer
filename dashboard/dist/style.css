@@ -414,6 +414,10 @@
   color: var(--rdv-muted-fg);
   overflow: hidden;
   text-overflow: ellipsis;
+.rdv-message-time {
+  margin-left: auto;
+  white-space: nowrap;
+}
   white-space: nowrap;
   min-width: 0;
   flex: 1;

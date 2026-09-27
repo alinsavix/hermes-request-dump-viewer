@@ -77,6 +77,39 @@ def _write_dump(
     return path
 
 
+def test_dump_messages_include_matching_persisted_timestamps():
+    messages = [
+        {"role": "system", "content": "Injected prompt"},
+        {"role": "user", "content": "Hello"},
+        {"role": "assistant", "content": "", "tool_calls": [{"id": "call-1", "function": {"name": "lookup", "arguments": "{}"}}]},
+        {"role": "tool", "name": "lookup", "tool_call_id": "call-1", "content": '{"result":"ok"}'},
+    ]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+        dump = _write_dump(
+            root, "request_dump_times.json", session_id="times", timestamp="2026-01-01T00:00:00Z", messages=messages, mtime=100
+        )
+        with sqlite3.connect(root / "state.db") as db:
+            db.executescript(
+                "CREATE TABLE messages("
+                "id INTEGER PRIMARY KEY, session_id TEXT, role TEXT, content TEXT, tool_calls TEXT, "
+                "tool_name TEXT, tool_call_id TEXT, platform_message_id TEXT, timestamp REAL, active INTEGER, display_order INTEGER);"
+            )
+            db.executemany(
+                "INSERT INTO messages VALUES (?, 'times', ?, ?, ?, ?, ?, NULL, ?, 1, ?)",
+                [
+                    (1, "user", "Hello", None, None, None, 101.25, 1),
+                    (2, "assistant", "", json.dumps(messages[2]["tool_calls"]), None, None, 102.5, 2),
+                    (3, "tool", '{"result":"ok"}', None, "lookup", "call-1", 103.75, 3),
+                ],
+            )
+        with patch.object(api, "get_hermes_home", return_value=root):
+            detail = api.get_dump(dump.name)
+    assert "persisted_at" not in detail["messages"][0]
+    assert [message["persisted_at"] for message in detail["messages"][1:]] == [101.25, 102.5, 103.75]
+    assert [message["state_message_id"] for message in detail["messages"][1:]] == [1, 2, 3]
+
+
 def test_redacted_detail_masks_common_credentials_and_sensitive_url_parameters():
     secret_keys = ("api_key", "access_token", "client_secret", "password", "token", "x-auth-token", "refresh_token")
     with tempfile.TemporaryDirectory() as temp_dir:

@@ -111,6 +111,25 @@ test("full App keeps ordinary role, status, phase and tool labels unchanged", as
   assert.deepEqual(app.caught, []);
 });
 
+test("full App displays persisted message timestamps without inventing one", async (t) => {
+  const app = await mount(t, {
+    detail: {
+      messages: [
+        { role: "system", content: "Injected prompt" },
+        { role: "user", content: "Hello", persisted_at: 101.25 },
+      ],
+    },
+  });
+  assert.equal(app.document.querySelector("#message-1 .rdv-message-time"), null);
+  assert.equal(
+    app.document.querySelector("#message-2 .rdv-message-time").textContent,
+    new Date(101250).toISOString(),
+  );
+  assert.equal(
+    app.document.querySelector("#message-2 > summary").lastElementChild.classList.contains("rdv-message-time"),
+    true,
+  );
+});
 test("full App tool names already use string headers, not direct React children", async (t) => {
   for (const [kind, name] of cases) {
     await t.test(kind, async (t) => {
