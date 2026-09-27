@@ -373,6 +373,14 @@
 .rdv-message.is-removed {
   border-left: 3px solid var(--color-destructive);
 }
+/* Human prompts and assistant output stand out without changing tool/system rows. */
+.rdv-message.rdv-message-user {
+  background: color-mix(in srgb, #3ba55c 10%, var(--rdv-card));
+}
+.rdv-message.rdv-message-assistant-response,
+.rdv-message.rdv-outcome-message {
+  background: color-mix(in srgb, #d6a800 11%, var(--rdv-card));
+}
 .rdv-message-summary {
   display: flex;
   align-items: center;
@@ -406,6 +414,10 @@
   color: var(--rdv-muted-fg);
   font-size: 10px;
 }
+.rdv-message-time {
+  margin-left: auto;
+  white-space: nowrap;
+}
 .rdv-call-count {
   color: var(--rdv-muted-fg);
   white-space: nowrap;
@@ -414,10 +426,6 @@
   color: var(--rdv-muted-fg);
   overflow: hidden;
   text-overflow: ellipsis;
-.rdv-message-time {
-  margin-left: auto;
-  white-space: nowrap;
-}
   white-space: nowrap;
   min-width: 0;
   flex: 1;

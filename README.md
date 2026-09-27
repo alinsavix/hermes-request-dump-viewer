@@ -18,7 +18,7 @@ Features, all available in the **Request Dumps** dashboard tab:
 - Hermes Agent with the general plugin system and web-dashboard plugin system
 - A current Hermes release providing the `pre_api_request` hook and
   `HERMES_DUMP_REQUESTS` request-capture path
-- Python 3.11–3.13
+- Python 3.11–3.14
 
 ## Installation
 

@@ -606,13 +606,26 @@
       (message.content == null ||
         message.content === "" ||
         (Array.isArray(message.content) && message.content.length === 0));
+    // Assistant records with tool calls are provider-side work, not text the
+    // user receives. Highlight only a direct, nonempty assistant response.
+    const isDirectAssistantResponse =
+      message.role === "assistant" &&
+      calls.length === 0 &&
+      Boolean(text(message.content).trim());
+    const conversationRoleClass =
+      message.role === "user"
+        ? " rdv-message-user"
+        : isDirectAssistantResponse
+          ? " rdv-message-assistant-response"
+          : "";
     return h(
       "details",
       {
         id: "message-" + (props.index + 1),
         className:
-          "rdv-message " +
-          (props.added ? "is-added" : "") +
+          "rdv-message" +
+          conversationRoleClass +
+          (props.added ? " is-added" : "") +
           (props.removed ? " is-removed" : ""),
       },
       h(

@@ -7,7 +7,7 @@ name = "hermes-request-dump-viewer"
 version = "0.4.1"
 description = "Hermes Agent dashboard plugin for inspecting request dumps"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.15"
 license = { text = "AGPL-3.0-or-later" }
 authors = [{ name = "TDV Alinsa" }]
 dependencies = [

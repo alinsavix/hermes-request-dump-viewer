@@ -111,6 +111,40 @@ test("full App keeps ordinary role, status, phase and tool labels unchanged", as
   assert.deepEqual(app.caught, []);
 });
 
+test("full App highlights only human prompts and direct assistant responses", async (t) => {
+  const app = await mount(t, {
+    detail: {
+      messages: [
+        { role: "user", content: "Please inspect the moon." },
+        { role: "assistant", content: "The moon is round." },
+        {
+          role: "assistant",
+          tool_calls: [
+            { id: "inspect", function: { name: "skill_view", arguments: "{}" } },
+          ],
+        },
+        { role: "assistant", content: "" },
+        { role: "tool", content: "tool output" },
+        { role: "system", content: "system context" },
+      ],
+    },
+  });
+  assert.ok(app.document.querySelector("#message-1.rdv-message-user"));
+  assert.ok(
+    app.document.querySelector("#message-2.rdv-message-assistant-response"),
+  );
+  for (const index of [3, 4, 5, 6]) {
+    assert.equal(
+      app.document.querySelector(`#message-${index}.rdv-message-user`),
+      null,
+    );
+    assert.equal(
+      app.document.querySelector(`#message-${index}.rdv-message-assistant-response`),
+      null,
+    );
+  }
+});
+
 test("full App displays persisted message timestamps without inventing one", async (t) => {
   const app = await mount(t, {
     detail: {
@@ -130,6 +164,8 @@ test("full App displays persisted message timestamps without inventing one", asy
     true,
   );
 });
+
+
 test("full App tool names already use string headers, not direct React children", async (t) => {
   for (const [kind, name] of cases) {
     await t.test(kind, async (t) => {
