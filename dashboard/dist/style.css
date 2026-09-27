@@ -309,7 +309,7 @@
   flex: 1;
 }
 .rdv-title strong,
-.rdv-title code {
+.rdv-filename {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -318,11 +318,34 @@
 .rdv-title strong {
   font-size: 13px;
 }
-.rdv-title code {
+.rdv-filename {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.rdv-filename code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 10px;
   color: var(--rdv-muted-fg);
   background: transparent;
   padding: 0;
+}
+.rdv-copy-filename {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--rdv-muted-fg);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.rdv-copy-filename:hover,
+.rdv-copy-filename:focus-visible {
+  color: var(--rdv-primary);
 }
 .rdv-tabs {
   display: flex;

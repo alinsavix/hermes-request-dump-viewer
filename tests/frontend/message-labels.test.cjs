@@ -70,6 +70,17 @@ test("full App renders malformed message labels as text without losing the origi
   }
 });
 
+test("full App copies the displayed request-dump filename", async (t) => {
+  const app = await mount(t);
+  const button = app.document.querySelector(
+    'button[aria-label="Copy request dump filename"]',
+  );
+  assert.ok(button, "filename copy button exists in the dump header");
+  assert.equal(button.title, "Copy request dump filename");
+  await app.click(button);
+  assert.equal(app.copied.at(-1), app.detail.meta.file);
+});
+
 test("full App keeps ordinary role, status, phase and tool labels unchanged", async (t) => {
   const roles = ["system", "developer", "user", "assistant", "reasoning", "tool"];
   const messages = roles.map((role) => ({

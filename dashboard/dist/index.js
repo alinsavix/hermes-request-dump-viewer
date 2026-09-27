@@ -1898,7 +1898,23 @@
           "div",
           { className: "rdv-title" },
           h("strong", null, detail.meta.model || "Request dump"),
-          h("code", null, detail.meta.file),
+          h(
+            "span",
+            { className: "rdv-filename" },
+            h("code", null, detail.meta.file),
+            h(
+              "button",
+              {
+                className: "rdv-copy-filename",
+                "aria-label": "Copy request dump filename",
+                title: "Copy request dump filename",
+                onClick: function () {
+                  copyText(detail.meta.file);
+                },
+              },
+              "⧉",
+            ),
+          ),
         ),
         h(
           "div",
