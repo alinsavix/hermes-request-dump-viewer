@@ -429,6 +429,30 @@ def test_prompt_map_recognizes_injected_source_sections():
     assert all(section["message_index"] == 0 for section in sections)
 
 
+def test_prompt_map_splits_memory_headings_with_live_usage_suffixes():
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "## Skills\n<available_skills>\n  local:\n    - useful: Helpful.\n"
+                "</available_skills>\n\n"
+                "════════════════════\n"
+                "MEMORY (your personal notes) [94% — 2,080/2,200 chars]\n"
+                "Durable note.\n\n"
+                "USER PROFILE (who the user is) [96% — 1,323/1,375 chars]\n"
+                "User preference."
+            ),
+        }
+    ]
+    sections = api._prompt_sections(messages)
+    by_title = {section["title"]: section for section in sections}
+    assert by_title["Skills"]["category"] == "Skills"
+    assert by_title["MEMORY (your personal notes)"]["category"] == "Persistent memory"
+    assert by_title["MEMORY (your personal notes)"]["content"] == "Durable note."
+    assert by_title["USER PROFILE (who the user is)"]["category"] == "User profile"
+    assert by_title["USER PROFILE (who the user is)"]["content"] == "User preference."
+
+
 def test_tool_flow_pairs_results_and_reports_missing_and_orphaned_results():
     body = sample_body()
     messages = api._normalized_messages(body)

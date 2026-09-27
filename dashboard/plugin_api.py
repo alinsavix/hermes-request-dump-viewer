@@ -527,7 +527,7 @@ def _prompt_sections(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Split system/instructions messages into recognizable injected sections."""
     heading = re.compile(r"^#{1,6}\s+(.+?)\s*$")
     bare = re.compile(
-        r"^(MEMORY \(your personal notes\)|USER PROFILE \(who the user is\)|Current Session Context)\s*$",
+        r"^(MEMORY \(your personal notes\)|USER PROFILE \(who the user is\)|Current Session Context)(?:\s+\[[^\]]+\])?\s*$",
         re.IGNORECASE,
     )
     sections: list[dict[str, Any]] = []
