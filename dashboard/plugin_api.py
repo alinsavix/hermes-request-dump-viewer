@@ -403,10 +403,14 @@ def _persisted_session_messages(session_id: str) -> list[dict[str, Any]]:
             return []
         visibility = "(active = 1 OR compacted = 1)" if "compacted" in columns else "active = 1"
         order = "COALESCE(display_order, id), id" if "display_order" in columns else "id"
-        optional = {name: name if name in columns else f"NULL AS {name}" for name in ("tool_calls", "tool_name", "tool_call_id")}
+        optional = {
+            name: name if name in columns else f"NULL AS {name}"
+            for name in ("tool_calls", "tool_name", "tool_call_id", "_compressed_summary")
+        }
         rows = connection.execute(
             "SELECT id, role, content, timestamp, "
-            f"{optional['tool_calls']}, {optional['tool_name']}, {optional['tool_call_id']} "
+            f"{optional['tool_calls']}, {optional['tool_name']}, {optional['tool_call_id']}, "
+            f"{optional['_compressed_summary']} "
             f"FROM messages WHERE session_id = ? AND {visibility} ORDER BY {order}",
             (session_id,),
         ).fetchall()
@@ -429,7 +433,14 @@ def _persisted_session_messages(session_id: str) -> list[dict[str, Any]]:
             message["name"] = row["tool_name"]
         if row["tool_call_id"] is not None:
             message["tool_call_id"] = row["tool_call_id"]
-        messages.append({"id": row["id"], "timestamp": row["timestamp"], "message": message})
+        messages.append(
+            {
+                "id": row["id"],
+                "timestamp": row["timestamp"],
+                "context_compressed": bool(row["_compressed_summary"]),
+                "message": message,
+            }
+        )
     return messages
 
 
@@ -461,11 +472,20 @@ def _attach_persisted_timestamps(session_id: Any, messages: list[dict[str, Any]]
             continue
         record = persisted[match_index]
         timestamp = record["timestamp"]
+        message["state_message_id"] = record["id"]
         if isinstance(timestamp, (int, float)) and math.isfinite(timestamp):
             message["persisted_at"] = timestamp
-            message["state_message_id"] = record["id"]
+        if record["context_compressed"] and _matches_compression_summary(message, record["message"]):
+            message["context_compressed"] = True
         cursor = match_index + 1
     return enriched
+
+
+def _matches_compression_summary(message: dict[str, Any], persisted: dict[str, Any]) -> bool:
+    """Compression is a content boundary, never a reused provider call ID."""
+    if message.get("role") != persisted.get("role"):
+        return False
+    return _content_text(message.get("content")) == _content_text(persisted.get("content"))
 
 
 def _compact_text(value: Any) -> str:
@@ -893,6 +913,7 @@ def get_session_timeline(session_id: str):
         request = data.get("request") if isinstance(data.get("request"), dict) else {}
         body = request.get("body") if isinstance(request.get("body"), dict) else None
         messages = _normalized_messages(body) if body is not None else []
+        messages = _attach_persisted_timestamps(session_id, messages)
         composition = _analyze_request(body, messages)["composition"] if body is not None else None
         timestamp = data.get("timestamp")
         timeline.append(
@@ -910,8 +931,21 @@ def get_session_timeline(session_id: str):
         )
 
     timeline.sort(key=lambda item: item["_sort_key"])
+    compression_timestamps = sorted(
+        record["timestamp"]
+        for record in _persisted_session_messages(session_id)
+        if record["context_compressed"] and isinstance(record["timestamp"], (int, float)) and math.isfinite(record["timestamp"])
+    )
+    compression_index = 0
+    previous_sort_time: float | None = None
     for index, item in enumerate(timeline):
-        item.pop("_sort_key")
+        sort_time = item.pop("_sort_key")[0]
+        item["context_compressed"] = False
+        while compression_index < len(compression_timestamps) and compression_timestamps[compression_index] <= sort_time:
+            if previous_sort_time is not None and compression_timestamps[compression_index] > previous_sort_time:
+                item["context_compressed"] = True
+            compression_index += 1
+        previous_sort_time = sort_time
         item["sequence"] = index + 1
         previous = timeline[index - 1] if index else None
         item["size_delta"] = item["size"] - previous["size"] if previous is not None else None

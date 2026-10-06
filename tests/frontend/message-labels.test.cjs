@@ -177,6 +177,45 @@ test("full App displays persisted message timestamps without inventing one", asy
 });
 
 
+test("full App marks the compression summary and its request timeline entry", async (t) => {
+  const app = await mount(t, {
+    detail: {
+      messages: [
+        { role: "system", content: "Injected prompt" },
+        { role: "user", content: "Conversation summary", context_compressed: true },
+      ],
+    },
+    fetch: (url) =>
+      url.endsWith("/timeline")
+        ? {
+            items: [
+              {
+                file: "request_dump_after.json",
+                sequence: 2,
+                context_compressed: true,
+              },
+            ],
+          }
+        : undefined,
+  });
+  const message = app.document.querySelector("#message-2");
+  const timelineButton = app.document.querySelector(
+    ".rdv-timeline-strip .is-context-compressed",
+  );
+  assert.equal(message?.classList.contains("is-context-compressed"), true);
+  assert.equal(
+    message?.querySelector(".rdv-context-compressed")?.textContent,
+    "Context compressed",
+  );
+  assert.equal(timelineButton?.classList.contains("is-context-compressed"), true);
+  assert.equal(timelineButton?.textContent, "2");
+  assert.equal(
+    app.document.querySelector(".rdv-timeline-current .rdv-context-compressed")?.textContent,
+    "Context compressed",
+  );
+});
+
+
 test("full App tool names already use string headers, not direct React children", async (t) => {
   for (const [kind, name] of cases) {
     await t.test(kind, async (t) => {

@@ -625,6 +625,7 @@
         className:
           "rdv-message" +
           conversationRoleClass +
+          (message.context_compressed ? " is-context-compressed" : "") +
           (props.added ? " is-added" : "") +
           (props.removed ? " is-removed" : ""),
       },
@@ -641,6 +642,12 @@
         phase && h("span", { className: "rdv-status" }, phase),
         message._responses_kind === "instructions" &&
           h("span", { className: "rdv-change" }, "Responses instructions"),
+        message.context_compressed &&
+          h(
+            "span",
+            { className: "rdv-index rdv-context-compressed" },
+            "Context compressed",
+          ),
         props.added && h("span", { className: "rdv-change" }, "added"),
         props.removed && h("span", { className: "rdv-change" }, "removed"),
         calls.length > 0 &&
@@ -1370,10 +1377,16 @@
               "button",
               {
                 key: item.file,
+                "aria-label": item.context_compressed
+                  ? "Request " + String(item.sequence || "") + " after context compression"
+                  : undefined,
                 title:
                   when(item.timestamp || item.modified) +
-                  (delta ? " · " + delta : ""),
-                className: item.file === props.selected ? "active" : "",
+                  (delta ? " · " + delta : "") +
+                  (item.context_compressed ? " · Context compressed" : ""),
+                className:
+                  (item.file === props.selected ? "active" : "") +
+                  (item.context_compressed ? " is-context-compressed" : ""),
                 onClick: function () {
                   props.onSelect(item.file);
                 },
@@ -1400,6 +1413,12 @@
           h("span", null, when(current.timestamp || current.modified)),
           h("span", null, current.model || "unknown model"),
           h("span", null, bytes(current.size)),
+          current.context_compressed &&
+            h(
+              "span",
+              { className: "rdv-index rdv-context-compressed" },
+              "Context compressed",
+            ),
           current.size_delta != null &&
             h(
               "span",
