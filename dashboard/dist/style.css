@@ -404,6 +404,9 @@
 .rdv-message.rdv-outcome-message {
   background: color-mix(in srgb, #d6a800 11%, var(--rdv-card));
 }
+.rdv-message.is-context-compressed {
+  background: color-mix(in srgb, #a855f7 16%, var(--rdv-card));
+}
 .rdv-message-summary {
   display: flex;
   align-items: center;
@@ -1144,6 +1147,17 @@
   border-color: var(--rdv-primary);
   color: var(--color-primary-foreground, #fff);
   font-weight: 700;
+}
+.rdv-timeline-strip button.is-context-compressed {
+  background: #4c1d95;
+  border-color: #3b0764;
+  color: #fff;
+  font-weight: 700;
+}
+.rdv-timeline-strip button.is-context-compressed.active {
+  background: #7c3aed;
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #7c3aed;
 }
 .rdv-timeline-loading,
 .rdv-timeline-error {
