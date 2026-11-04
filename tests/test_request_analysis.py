@@ -110,6 +110,98 @@ def test_dump_messages_include_matching_persisted_timestamps():
     assert [message["state_message_id"] for message in detail["messages"][1:]] == [1, 2, 3]
 
 
+def test_compression_summary_marks_detail_and_first_request_timeline_entry_only():
+    before_compression = [
+        {"role": "system", "content": "Injected prompt"},
+        {"role": "user", "content": "Before compression"},
+    ]
+    first_after_compression = [
+        {"role": "system", "content": "Injected prompt"},
+        {"role": "user", "content": "Conversation summary"},
+        {"role": "user", "content": "Continue from the summary"},
+    ]
+    later_after_compression = [
+        *first_after_compression,
+        {"role": "user", "content": "Later follow-up"},
+    ]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+        _write_dump(
+            root,
+            "request_dump_before_compression.json",
+            session_id="compressed",
+            timestamp="1970-01-01T00:01:40Z",
+            messages=before_compression,
+            mtime=100,
+        )
+        first_dump = _write_dump(
+            root,
+            "request_dump_first_after_compression.json",
+            session_id="compressed",
+            timestamp="1970-01-01T00:01:42Z",
+            messages=first_after_compression,
+            mtime=101,
+        )
+        _write_dump(
+            root,
+            "request_dump_later_after_compression.json",
+            session_id="compressed",
+            timestamp="1970-01-01T00:01:43Z",
+            messages=later_after_compression,
+            mtime=102,
+        )
+        with sqlite3.connect(root / "state.db") as db:
+            db.executescript(
+                "CREATE TABLE messages("
+                "id INTEGER PRIMARY KEY, session_id TEXT, role TEXT, content TEXT, timestamp REAL, "
+                "active INTEGER, _compressed_summary INTEGER);"
+            )
+            db.executemany(
+                "INSERT INTO messages VALUES (?, 'compressed', 'user', ?, ?, 1, ?)",
+                [
+                    (0, "Context before the captured timeline", 50.0, 1),
+                    (1, "Conversation summary", 101.25, 1),
+                    (2, "Continue from the summary", 102.5, 0),
+                    (3, "Later follow-up", 103.75, 0),
+                ],
+            )
+        with patch.object(api, "get_hermes_home", return_value=root):
+            detail = api.get_dump(first_dump.name)
+            timeline = api.get_session_timeline("compressed")
+    assert detail["messages"][1]["context_compressed"] is True
+    assert "context_compressed" not in detail["messages"][2]
+    assert [item.get("context_compressed", False) for item in timeline["items"]] == [False, True, False]
+
+
+def test_compression_summary_does_not_match_a_reused_tool_call_id():
+    messages = [
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [{"id": "historical-call", "function": {"name": "patch", "arguments": "{}"}}],
+        }
+    ]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+        with sqlite3.connect(root / "state.db") as db:
+            db.executescript(
+                "CREATE TABLE messages("
+                "id INTEGER PRIMARY KEY, session_id TEXT, role TEXT, content TEXT, tool_calls TEXT, "
+                "timestamp REAL, active INTEGER, _compressed_summary INTEGER);"
+            )
+            db.execute(
+                "INSERT INTO messages VALUES (1, 'compressed', 'assistant', ?, ?, 101.25, 1, 1)",
+                (
+                    "Persisted context summary",
+                    json.dumps(messages[0]["tool_calls"]),
+                ),
+            )
+        with patch.object(api, "get_hermes_home", return_value=root):
+            enriched = api._attach_persisted_timestamps("compressed", messages)
+    assert enriched[0]["state_message_id"] == 1
+    assert "context_compressed" not in enriched[0]
+
+
 def test_redacted_detail_masks_common_credentials_and_sensitive_url_parameters():
     secret_keys = ("api_key", "access_token", "client_secret", "password", "token", "x-auth-token", "refresh_token")
     with tempfile.TemporaryDirectory() as temp_dir:
