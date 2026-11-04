@@ -18,7 +18,7 @@ spec.loader.exec_module(plugin)
 @pytest.fixture
 def plugin_state(tmp_path, monkeypatch):
     home = tmp_path
-    state_path = home / "state" / plugin._STATE_FILE
+    state_path = home / "plugin-data" / "request-dump-viewer" / plugin._STATE_FILE
     monkeypatch.delenv(plugin._ENV_KEY, raising=False)
     plugin._last_enabled = None
     monkeypatch.setattr(plugin, "_reset_failed", False, raising=False)
@@ -75,7 +75,7 @@ def test_malformed_state_fails_closed(plugin_state):
 
 def test_failed_reset_latches_local_capture_off(plugin_state):
     home, path = plugin_state
-    path.parent.mkdir()
+    path.parent.mkdir(parents=True)
     path.write_text('{"enabled": true}')
     os.environ[plugin._ENV_KEY] = "true"
     with patch.object(plugin, "_home", return_value=home):
@@ -94,7 +94,7 @@ def test_failed_reset_latches_local_capture_off(plugin_state):
 
 def test_register_unconditionally_resets_shared_state_on_every_registration(plugin_state):
     home, path = plugin_state
-    path.parent.mkdir()
+    path.parent.mkdir(parents=True)
     hooks = []
 
     class Context:

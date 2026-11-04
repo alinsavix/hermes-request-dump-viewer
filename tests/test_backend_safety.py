@@ -55,6 +55,7 @@ def http(path, method="GET", body=None):
 @pytest.fixture
 def home(tmp_path, monkeypatch):
     monkeypatch.setattr(api, "get_hermes_home", lambda: tmp_path)
+    (tmp_path / "plugin-data").mkdir()
     return tmp_path
 
 
