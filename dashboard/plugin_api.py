@@ -773,19 +773,14 @@ _NATIVE_DUMP_RE = re.compile(r"^request_dump_(?P<component>[A-Za-z0-9_-]+)_(?P<s
 
 
 def _session_filename_component(session_id: str) -> str:
-    try:
-        from agent.session_persistence import _safe_session_filename_component
-    except ImportError:
-        # Standalone plugin tests/installations do not require the agent's
-        # runtime dependency tree. Keep this fallback identical to the writer.
-        import hashlib
+    """Return the stable, path-safe component used in request-dump filenames."""
+    import hashlib
 
-        raw = str(session_id or "").strip()
-        sanitized = re.sub(r"[^\w-]", "_", raw).strip("._")[:96] or "session"
-        if raw and sanitized == raw:
-            return sanitized
-        return f"{sanitized}_{hashlib.sha256(raw.encode('utf-8', errors='surrogatepass')).hexdigest()[:12]}"
-    return _safe_session_filename_component(session_id)
+    raw = str(session_id or "").strip()
+    sanitized = re.sub(r"[^\w-]", "_", raw).strip("._")[:96] or "session"
+    if raw and sanitized == raw:
+        return sanitized
+    return f"{sanitized}_{hashlib.sha256(raw.encode('utf-8', errors='surrogatepass')).hexdigest()[:12]}"
 
 
 def _filename_identity(path: Path) -> tuple[str, float] | None:

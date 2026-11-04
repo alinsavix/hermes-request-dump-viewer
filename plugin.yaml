@@ -1,5 +1,6 @@
 name: request-dump-viewer
-version: "0.4.1"
+version: "0.4.2"
+requires_hermes: ">=0.21.5"
 manifest_version: 1
 api_version: 1
 description: "Request dump viewer plus live preflight-capture toggle."
