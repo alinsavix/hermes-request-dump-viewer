@@ -16,7 +16,7 @@ Features, all available in the **Request Dumps** dashboard tab:
 ## Requirements
 
 - Hermes Agent with the general plugin system and web-dashboard plugin system
-- A current Hermes release providing the `pre_api_request` hook and
+- Hermes Agent `>=0.21.5` providing the `pre_api_request` hook and
   `HERMES_DUMP_REQUESTS` request-capture path
 - Python 3.11–3.14
 
@@ -96,6 +96,15 @@ in the repository view; open one in a new tab to see the full-resolution image.
 ## Security notes
 
 - The plugin runs Python in-process with Hermes and is not sandboxed.
+- The plugin reads matching request dumps from Hermes' sessions directory and
+  reads Hermes' `state.db` without modifying it to correlate messages with
+  captured requests.
+- The capture switch writes only its own state file under
+  `<HERMES_HOME>/plugin-data/request-dump-viewer/` and, through its registered
+  gateway hook, sets or clears `HERMES_DUMP_REQUESTS` for the current gateway
+  process immediately before a provider request.
+- It makes no network or shell calls, uses no telemetry, and never reads
+  credential stores.
 - Request dumps are local files, but dashboard access should still be treated as privileged.
 - Redaction is best-effort and cannot recognize every secret embedded in arbitrary prompt text or tool payloads.
 - Raw JSON download requires an explicit confirmation in the UI.

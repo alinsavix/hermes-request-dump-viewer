@@ -34,7 +34,11 @@ def _home() -> Path:
 
 
 def _state_path() -> Path:
-    return _home() / "state" / _STATE_FILE
+    try:
+        from plugins.plugin_storage import plugin_data_dir
+    except ImportError:  # pragma: no cover - standalone test fallback
+        return _home() / "plugin-data" / "request-dump-viewer" / _STATE_FILE
+    return plugin_data_dir("request-dump-viewer") / _STATE_FILE
 
 
 def _check_state_path(path: Path) -> None:
