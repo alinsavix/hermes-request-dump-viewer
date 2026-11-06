@@ -29,7 +29,7 @@ repos:
         pass_filenames: false
       - id: pytest
         name: pytest
-        entry: uv run --locked pytest -q
+        entry: env -u PYTHONPATH -u PYTHONHOME uv run --locked --extra test pytest -q
         language: system
         pass_filenames: false
       - id: frontend-runtime

@@ -1,5 +1,5 @@
 name: request-dump-viewer
-version: "0.4.3"
+version: "0.4.4"
 requires_hermes: ">=0.21.5"
 manifest_version: 1
 api_version: 1

@@ -52,6 +52,10 @@ at gateway startup. Turn on **Preflight capture** only when investigating a
 request; it writes request dumps for subsequent requests until turned off or
 the gateway process ends.
 
+Capture is process-wide: in a multi-profile gateway, enabling it from one
+profile can capture requests handled for other profiles sharing that gateway.
+Turn it on only for the investigation window, then turn it off.
+
 The viewer reads dumps from Hermes' sessions directory. Redacted views are the
 default. **Raw downloads contain the original request object and may include
 private prompts, authorization headers, cookies, tokens, URLs, tool arguments,
@@ -102,7 +106,9 @@ in the repository view; open one in a new tab to see the full-resolution image.
 - The capture switch writes only its own state file under
   `<HERMES_HOME>/plugin-data/request-dump-viewer/` and, through its registered
   gateway hook, sets or clears `HERMES_DUMP_REQUESTS` for the current gateway
-  process immediately before a provider request.
+  process immediately before a provider request. That environment setting is
+  process-wide, so a multi-profile gateway can capture requests from another
+  profile while capture is enabled.
 - It makes no network or shell calls, uses no telemetry, and never reads
   credential stores.
 - Request dumps are local files, but dashboard access should still be treated as privileged.

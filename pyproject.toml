@@ -4,22 +4,22 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hermes-request-dump-viewer"
-version = "0.4.3"
+version = "0.4.4"
 description = "Hermes Agent dashboard plugin for inspecting request dumps"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
 license = { text = "AGPL-3.0-or-later" }
 authors = [{ name = "TDV Alinsa" }]
 dependencies = [
-    "fastapi==0.133.1",
-    "pydantic==2.13.4",
+    "fastapi>=0.104,<1",
+    "pydantic>=2.12,<3",
 ]
 
 [project.optional-dependencies]
 test = [
-    "pytest==9.1.1",
-    "pyyaml==6.0.3",
-    "ruff==0.15.10",
+    "pytest>=9.1,<10",
+    "pyyaml>=6.0,<7",
+    "ruff>=0.15,<1",
 ]
 
 [tool.hatch.build.targets.wheel]
